@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Testing Website</title>
+	<title>Login Project</title>
 	<style>
 		body {
 			font-family: Arial;
@@ -154,9 +154,9 @@
 			// Check credentials against Firebase Authentication
 			signInWithEmailAndPassword(auth, email, pass)
 				.then(() => {
-					alert('✓ Login successful!');
 					document.getElementById('loginEmail').value = '';
 					document.getElementById('loginPassword').value = '';
+					window.location.href="website.html";
 				})
 				.catch((error) => {
 					err.textContent = firebaseErrorToMessage(error.code);
