@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Login Project</title>
+	<style>
+		body {
+			font-family: Arial;
+			min-height: 100vh;
+			margin: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: #E0B0FF;
+		}
+		.card {
+			background: #fff;
+			padding: 32px;
+			border-radius: 8px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			width: 320px;
+		}
+		label {
+			display: block;
+			font-size: 13px;
+			font-weight: 600;
+			color: #333;
+			margin-bottom: 4px;
+		}
+		input {
+			width: 100%;
+			padding: 8px;
+			margin: 0 0 14px 0;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			box-sizing: border-box;
+		}
+		button {
+			width: 100%;
+			padding: 10px;
+			margin: 10px 0;
+			background: #2563eb;
+			color: #fff;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+		button:hover { background: #1d4ed8; }
+		.error { color: red; font-size: 13px; }
+		.success { color: green; font-size: 13px; }
+		.hidden { display: none; }
+		a { color: #2563eb; text-decoration: none; }
+		p { text-align: center; font-size: 14px; }
+	</style>
+</head>
+<body>
+	<div id="login" class="card hidden">
+		<h2 style="text-align: center">Welcome to the testing website!</h2>
+		<label for="loginEmail">Email</label>
+		<input type="email" id="loginEmail">
+		<label for="loginPassword">Password</label>
+		<input type="password" id="loginPassword">
+		<div id="loginError" class="error"></div>
+		<button onclick="login()">Login</button>
+		<p><a href="#" onclick="showRegister()">Don't have an account? Sign up</a></p>
+	</div>
+	<div id="register" class="card">
+		<h2 style="text-align: center">Create Your Account</h2>
+		<label for="regEmail">Email</label>
+		<input type="email" id="regEmail" required>
+		<label for="regPassword">Password (8+ chars, 1 uppercase, 1 number)</label>
+		<input type="password" id="regPassword">
+		<label for="regConfirm">Confirm Password</label>
+		<input type="password" id="regConfirm">
+		<div id="regError" class="error"></div>
+		<button onclick="register()">Register</button>
+		<p><a href="#" onclick="showLogin()">Already have an account? Login</a></p>
+	</div>
+
+	<!-- Firebase SDK (CDN, no npm needed) -->
+	<script type="module">
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+		import {
+			getAuth,
+			createUserWithEmailAndPassword,
+			signInWithEmailAndPassword
+		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+		// Your web app's Firebase configuration
+		const firebaseConfig = {
+			apiKey: "AIzaSyBcFRqMGQaeyyIvJywiiQok5NlJeTCh4PQ",
+			authDomain: "testwebsite-f8d84.firebaseapp.com",
+			projectId: "testwebsite-f8d84",
+			storageBucket: "testwebsite-f8d84.firebasestorage.app",
+			messagingSenderId: "1045773600438",
+			appId: "1:1045773600438:web:04b719210a917afd330817",
+			measurementId: "G-RWK2WYQ8C4"
+		};
+
+		const app = initializeApp(firebaseConfig);
+		const auth = getAuth(app);
+
+		// Make functions available to the onclick="" handlers in the HTML
+		window.showLogin = function () {
+			document.getElementById('login').classList.remove('hidden');
+			document.getElementById('register').classList.add('hidden');
+		};
+
+		window.showRegister = function () {
+			document.getElementById('register').classList.remove('hidden');
+			document.getElementById('login').classList.add('hidden');
+		};
+
+		window.register = function () {
+			const email = document.getElementById('regEmail').value;
+			const pass = document.getElementById('regPassword').value;
+			const confirm = document.getElementById('regConfirm').value;
+			const err = document.getElementById('regError');
+			err.textContent = '';
+
+			if (!email || !pass || !confirm) {
+				err.textContent = 'All fields are required!';
+				return;
+			}
+			if (pass !== confirm) {
+				err.textContent = 'Password mismatch!';
+				return;
+			}
+			if (pass.length < 8 || !/[A-Z]/.test(pass) || !/[0-9]/.test(pass)) {
+				err.textContent = 'Password must have 8+ chars, 1 uppercase, 1 number!';
+				return;
+			}
+
+			// Create the account in Firebase Authentication
+			createUserWithEmailAndPassword(auth, email, pass)
+				.then(() => {
+					err.innerHTML = '<span class="success">✓ Account created!</span>';
+				})
+				.catch((error) => {
+					err.textContent = firebaseErrorToMessage(error.code);
+				});
+		};
+
+		window.login = function () {
+			const email = document.getElementById('loginEmail').value;
+			const pass = document.getElementById('loginPassword').value;
+			const err = document.getElementById('loginError');
+			err.textContent = '';
+
+			if (!email || !pass) {
+				err.textContent = 'Email and password are required!';
+				return;
+			}
+
+			// Check credentials against Firebase Authentication
+			signInWithEmailAndPassword(auth, email, pass)
+				.then(() => {
+					document.getElementById('loginEmail').value = '';
+					document.getElementById('loginPassword').value = '';
+					window.location.href="website.html";
+				})
+				.catch((error) => {
+					err.textContent = firebaseErrorToMessage(error.code);
+				});
+		};
+
+		function firebaseErrorToMessage(code) {
+			switch (code) {
+				case 'auth/email-already-in-use':
+					return 'An account with this email already exists.';
+				case 'auth/invalid-email':
+					return 'Invalid email address.';
+				case 'auth/invalid-credential':
+				case 'auth/wrong-password':
+				case 'auth/user-not-found':
+					return '❌ Invalid Credentials';
+				default:
+					return 'Something went wrong. Please try again.';
+			}
+		}
+
+		window.showRegister();
+	</script>
+</body>
+</html>
