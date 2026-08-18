@@ -64,6 +64,9 @@
 			<input type="checkbox" id="rememberMe" style="width: auto; display: inline;"> Remember Me
 		</label>
 		<button onclick="login()">Login</button>
+		<button onclick="loginWithGoogle()" style="background: #db4437;">Sign in with Google</button>
+		<button onclick="loginWithGithub()" style="background: #24292e;">Sign in with GitHub</button>
+		<button onclick="loginWithMicrosoft()" style="background: #2f2f2f;">Sign in with Microsoft</button>
 		<p><a href="#" onclick="showRegister()">Don't have an account? Sign up</a></p>
 	</div>
 	<div id="register" class="card">
@@ -85,7 +88,11 @@
 		import {
 			getAuth,
 			createUserWithEmailAndPassword,
-			signInWithEmailAndPassword
+			signInWithEmailAndPassword,
+			GoogleAuthProvider,
+			GithubAuthProvider,
+			OAuthProvider,
+			signInWithPopup
 		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 		// web app config
@@ -102,7 +109,7 @@
 		const app = initializeApp(firebaseConfig);
 		const auth = getAuth(app);
 
-		// Cookie helper functions
+		// cookie functions
 		function setCookie(name, value, days) {
 			const expires = new Date(Date.now() + days * 86400000).toUTCString();
 			document.cookie = `${name}=${value}; expires=${expires}; path=/`;
@@ -113,7 +120,7 @@
 			return match ? match[2] : null;
 		}
 
-		// function availability to the onclick="" handlers in the HTML
+		// function availability to handlers in the HTML
 		window.showLogin = function () {
 			document.getElementById('login').classList.remove('hidden');
 			document.getElementById('register').classList.add('hidden');
@@ -196,6 +203,29 @@
 					return 'Something went wrong. Please try again.';
 			}
 		}
+
+		function ssoLogin(provider) {
+			signInWithPopup(auth, provider)
+				.then((result) => {
+					alert('✓ Logged in as ' + result.user.email);
+					window.location.href = "website.html";
+				})
+				.catch((error) => {
+					document.getElementById('loginError').textContent = firebaseErrorToMessage(error.code);
+				});
+		}
+
+		window.loginWithGoogle = function () {
+			ssoLogin(new GoogleAuthProvider());
+		};
+
+		window.loginWithGithub = function () {
+			ssoLogin(new GithubAuthProvider());
+		};
+
+		window.loginWithMicrosoft = function () {
+			ssoLogin(new OAuthProvider('microsoft.com'));
+		};
 
 		window.showRegister();
 
