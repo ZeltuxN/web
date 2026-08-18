@@ -1,39 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Dashboard</title>
 	<style>
+		* { box-sizing: border-box; }
 		body {
-			font-family: Arial;
+			font-family: Arial, sans-serif;
 			margin: 0;
-			padding: 32px 0;
+			min-height: 100vh;
+			padding: 32px 20px;
 			background: #808080;
+			color: #111827;
 		}
-		h1 {
-			text-align: center;
-		}
-		.iframe-container {
+		.dashboard { max-width: 900px; margin: 0 auto; }
+		.profile {
 			display: flex;
-			flex-direction: column;
 			align-items: center;
 			gap: 16px;
+			padding: 22px;
+			background: #fff;
+			border-radius: 10px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+			margin-bottom: 24px;
 		}
+		.avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: #e5e7eb; }
+		h1 { margin: 0 0 5px; font-size: 24px; }
+		#userDetails { margin: 0; color: #4b5563; }
+		button {
+			margin-left: auto;
+			padding: 9px 15px;
+			background: #dc2626;
+			color: #fff;
+			font: inherit;
+			font-weight: 600;
+			border: 0;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.iframe-container { display: grid; justify-items: center; gap: 20px; }
 		iframe {
+			width: min(100%, 720px);
 			border: none;
 			border-radius: 8px;
-			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+			background: #fff;
+		}
+		.hidden { display: none; }
+		@media (max-width: 520px) {
+			.profile { align-items: flex-start; flex-wrap: wrap; }
+			button { margin-left: 72px; }
 		}
 	</style>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
-     crossorigin="anonymous"></script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
 <body>
-	<h1>Welcome! You're logged in.</h1>
+	<main id="dashboard" class="dashboard hidden">
+		<section class="profile">
+			<img id="userPhoto" class="avatar" alt="Profile photo">
+			<div>
+				<h1 id="welcome">Welcome!</h1>
+				<p id="userDetails"></p>
+			</div>
+			<button type="button" onclick="logout()">Sign out</button>
+		</section>
 
-	<div class="iframe-container">
-		<iframe src="index.html" width="400" height="300"></iframe>
-		<iframe src="https://en.wikipedia.org/wiki/HTML" width="400" height="300"></iframe>
-		<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="400" height="225"></iframe>
-	</div>
+		<div class="iframe-container">
+			<iframe title="HTML on Wikipedia" src="https://en.wikipedia.org/wiki/HTML" height="300"></iframe>
+			<iframe title="Video" src="https://www.youtube.com/embed/dQw4w9WgXcQ" height="405" allowfullscreen></iframe>
+		</div>
+	</main>
+
+	<script type="module">
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+		import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+		const firebaseConfig = {
+			apiKey: "AIzaSyBcFRqMGQaeyyIvJywiiQok5NlJeTCh4PQ",
+			authDomain: "testwebsite-f8d84.firebaseapp.com",
+			projectId: "testwebsite-f8d84",
+			storageBucket: "testwebsite-f8d84.firebasestorage.app",
+			messagingSenderId: "1045773600438",
+			appId: "1:1045773600438:web:04b719210a917afd330817",
+			measurementId: "G-RWK2WYQ8C4"
+		};
+
+		const app = initializeApp(firebaseConfig);
+		const auth = getAuth(app);
+
+		onAuthStateChanged(auth, (user) => {
+			if (!user) {
+				window.location.replace('index.html');
+				return;
+			}
+
+			const name = user.displayName || user.email?.split('@')[0] || 'there';
+			const provider = user.providerData[0]?.providerId?.replace('.com', '') || 'email';
+			document.getElementById('welcome').textContent = `Welcome, ${name}!`;
+			document.getElementById('userDetails').textContent = `${user.email || 'No email'} · Signed in with ${provider}`;
+			document.getElementById('userPhoto').src = user.photoURL || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"%3E%3Crect width="56" height="56" rx="28" fill="%23e5e7eb"/%3E%3Ccircle cx="28" cy="22" r="10" fill="%239ca3af"/%3E%3Cpath d="M10 51c2-11 9-17 18-17s16 6 18 17" fill="%239ca3af"/%3E%3C/svg%3E';
+			document.getElementById('dashboard').classList.remove('hidden');
+		});
+
+		window.logout = async function () {
+			await signOut(auth);
+		};
+	</script>
 </body>
 </html>

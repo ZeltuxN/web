@@ -1,24 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Testing Website</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Sign in | Testing Website</title>
 	<style>
+		:root { color-scheme: light; }
+		* { box-sizing: border-box; }
 		body {
-			font-family: Arial;
+			font-family: Arial, sans-serif;
 			min-height: 100vh;
 			margin: 0;
 			display: flex;
 			justify-content: center;
 			align-items: center;
+			padding: 24px;
 			background: #808080;
 		}
 		.card {
 			background: #fff;
 			padding: 32px;
-			border-radius: 8px;
-			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-			width: 320px;
+			border-radius: 10px;
+			box-shadow: 0 2px 14px rgba(0,0,0,0.16);
+			width: min(100%, 360px);
 		}
+		h2 { margin: 0 0 24px; text-align: center; }
 		label {
 			display: block;
 			font-size: 13px;
@@ -28,61 +34,73 @@
 		}
 		input {
 			width: 100%;
-			padding: 8px;
-			margin: 0 0 14px 0;
+			padding: 9px;
+			margin: 0 0 14px;
 			border: 1px solid #ccc;
 			border-radius: 4px;
-			box-sizing: border-box;
 		}
+		.remember { display: flex; align-items: center; gap: 7px; font-weight: 400; }
+		.remember input { width: auto; margin: 0; }
 		button {
 			width: 100%;
 			padding: 10px;
-			margin: 10px 0;
+			margin: 10px 0 0;
 			background: #2563eb;
 			color: #fff;
+			font: inherit;
+			font-weight: 600;
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
 		}
-		button:hover { background: #1d4ed8; }
-		.error { color: red; font-size: 13px; }
-		.success { color: green; font-size: 13px; }
+		button:hover { filter: brightness(0.92); }
+		button:disabled { cursor: wait; opacity: 0.65; }
+		.google { background: #db4437; }
+		.github { background: #24292e; }
+		.microsoft { background: #2f2f2f; }
+		.divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 2px; color: #666; font-size: 12px; }
+		.divider::before, .divider::after { content: ""; height: 1px; background: #ddd; flex: 1; }
+		.message { min-height: 18px; margin-top: 8px; font-size: 13px; text-align: center; }
+		.error { color: #b91c1c; }
 		.hidden { display: none; }
 		a { color: #2563eb; text-decoration: none; }
-		p { text-align: center; font-size: 14px; }
+		p { text-align: center; font-size: 14px; margin-bottom: 0; }
 	</style>
 </head>
 <body>
-	<div id="login" class="card hidden">
-		<h2 style="text-align: center">Welcome to the testing website!</h2>
-		<label for="loginEmail">Email</label>
-		<input type="email" id="loginEmail">
-		<label for="loginPassword">Password</label>
-		<input type="password" id="loginPassword">
-		<div id="loginError" class="error"></div>
-		<label>
-			<input type="checkbox" id="rememberMe" style="width: auto; display: inline;"> Remember Me
-		</label>
-		<button onclick="login()">Login</button>
-		<button onclick="loginWithGoogle()" style="background: #db4437;">Sign in with Google</button>
-		<button onclick="loginWithGithub()" style="background: #24292e;">Sign in with GitHub</button>
-		<button onclick="loginWithMicrosoft()" style="background: #2f2f2f;">Sign in with Microsoft</button>
-		<p><a href="#" onclick="showRegister()">Don't have an account? Sign up</a></p>
-	</div>
-	<div id="register" class="card">
-		<h2 style="text-align: center">Create Your Account</h2>
-		<label for="regEmail">Email</label>
-		<input type="email" id="regEmail" required>
-		<label for="regPassword">Password (8+ chars, 1 uppercase, 1 number)</label>
-		<input type="password" id="regPassword">
-		<label for="regConfirm">Confirm Password</label>
-		<input type="password" id="regConfirm">
-		<div id="regError" class="error"></div>
-		<button onclick="register()">Register</button>
-		<p><a href="#" onclick="showLogin()">Already have an account? Login</a></p>
-	</div>
+	<main>
+		<section id="login" class="card" aria-labelledby="loginTitle">
+			<h2 id="loginTitle">Welcome back</h2>
+			<label for="loginEmail">Email</label>
+			<input type="email" id="loginEmail" autocomplete="email">
+			<label for="loginPassword">Password</label>
+			<input type="password" id="loginPassword" autocomplete="current-password">
+			<label class="remember">
+				<input type="checkbox" id="rememberMe"> Remember email
+			</label>
+			<div id="loginError" class="message error" role="status" aria-live="polite"></div>
+			<button type="button" data-auth-button onclick="login()">Sign in</button>
+			<div class="divider">or continue with</div>
+			<button type="button" data-auth-button class="google" onclick="loginWithGoogle()">Google</button>
+			<button type="button" data-auth-button class="github" onclick="loginWithGithub()">GitHub</button>
+			<button type="button" data-auth-button class="microsoft" onclick="loginWithMicrosoft()">Microsoft</button>
+			<p><a href="#" onclick="showRegister(); return false;">Don't have an account? Sign up</a></p>
+		</section>
 
-	<!-- Firebase SDK -->
+		<section id="register" class="card hidden" aria-labelledby="registerTitle">
+			<h2 id="registerTitle">Create your account</h2>
+			<label for="regEmail">Email</label>
+			<input type="email" id="regEmail" autocomplete="email" required>
+			<label for="regPassword">Password (8+ chars, 1 uppercase, 1 number)</label>
+			<input type="password" id="regPassword" autocomplete="new-password">
+			<label for="regConfirm">Confirm password</label>
+			<input type="password" id="regConfirm" autocomplete="new-password">
+			<div id="regError" class="message error" role="status" aria-live="polite"></div>
+			<button type="button" data-auth-button onclick="register()">Register</button>
+			<p><a href="#" onclick="showLogin(); return false;">Already have an account? Sign in</a></p>
+		</section>
+	</main>
+
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 		import {
@@ -92,10 +110,11 @@
 			GoogleAuthProvider,
 			GithubAuthProvider,
 			OAuthProvider,
-			signInWithPopup
+			signInWithPopup,
+			setPersistence,
+			browserLocalPersistence
 		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-		// web app config
 		const firebaseConfig = {
 			apiKey: "AIzaSyBcFRqMGQaeyyIvJywiiQok5NlJeTCh4PQ",
 			authDomain: "testwebsite-f8d84.firebaseapp.com",
@@ -108,85 +127,97 @@
 
 		const app = initializeApp(firebaseConfig);
 		const auth = getAuth(app);
+		setPersistence(auth, browserLocalPersistence).catch(console.error);
 
-		// cookie functions
 		function setCookie(name, value, days) {
 			const expires = new Date(Date.now() + days * 86400000).toUTCString();
-			document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+			document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
 		}
 
 		function getCookie(name) {
-			const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-			return match ? match[2] : null;
+			const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+			return match ? decodeURIComponent(match[1]) : null;
 		}
 
-		// function availability to handlers in the HTML
+		function setBusy(isBusy) {
+			document.querySelectorAll('[data-auth-button]').forEach((button) => {
+				button.disabled = isBusy;
+			});
+		}
+
+		function goToDashboard() {
+			window.location.assign('website.html');
+		}
+
 		window.showLogin = function () {
 			document.getElementById('login').classList.remove('hidden');
 			document.getElementById('register').classList.add('hidden');
+			document.getElementById('loginError').textContent = '';
 		};
 
 		window.showRegister = function () {
 			document.getElementById('register').classList.remove('hidden');
 			document.getElementById('login').classList.add('hidden');
+			document.getElementById('regError').textContent = '';
 		};
 
-		window.register = function () {
-			const email = document.getElementById('regEmail').value;
+		window.register = async function () {
+			const email = document.getElementById('regEmail').value.trim();
 			const pass = document.getElementById('regPassword').value;
 			const confirm = document.getElementById('regConfirm').value;
 			const err = document.getElementById('regError');
 			err.textContent = '';
 
 			if (!email || !pass || !confirm) {
-				err.textContent = 'All fields are required!';
+				err.textContent = 'All fields are required.';
 				return;
 			}
 			if (pass !== confirm) {
-				err.textContent = 'Password mismatch!';
+				err.textContent = 'Passwords do not match.';
 				return;
 			}
 			if (pass.length < 8 || !/[A-Z]/.test(pass) || !/[0-9]/.test(pass)) {
-				err.textContent = 'Password must have 8+ chars, 1 uppercase, 1 number!';
+				err.textContent = 'Use 8+ characters with an uppercase letter and a number.';
 				return;
 			}
 
-			// create the account in the db
-			createUserWithEmailAndPassword(auth, email, pass)
-				.then(() => {
-					err.innerHTML = '<span class="success">✓ Account created!</span>';
-				})
-				.catch((error) => {
-					err.textContent = firebaseErrorToMessage(error.code);
-				});
+			setBusy(true);
+			try {
+				await createUserWithEmailAndPassword(auth, email, pass);
+				goToDashboard();
+			} catch (error) {
+				err.textContent = firebaseErrorToMessage(error.code);
+			} finally {
+				setBusy(false);
+			}
 		};
 
-		window.login = function () {
-			const email = document.getElementById('loginEmail').value;
+		window.login = async function () {
+			const email = document.getElementById('loginEmail').value.trim();
 			const pass = document.getElementById('loginPassword').value;
 			const err = document.getElementById('loginError');
 			err.textContent = '';
 
 			if (!email || !pass) {
-				err.textContent = 'Email and password are required!';
+				err.textContent = 'Email and password are required.';
 				return;
 			}
 
-			// check credentials against database
-			signInWithEmailAndPassword(auth, email, pass)
-				.then(() => {
-					if (document.getElementById('rememberMe').checked) {
-						setCookie('savedEmail', email, 7);
-					} else {
-						setCookie('savedEmail', '', 0);
-					}
-					alert('✓ Login successful!');
-					document.getElementById('loginPassword').value = '';
-					window.location.href="website.html";
-				})
-				.catch((error) => {
-					err.textContent = firebaseErrorToMessage(error.code);
-				});
+			setBusy(true);
+			try {
+				await signInWithEmailAndPassword(auth, email, pass);
+				if (document.getElementById('rememberMe').checked) {
+					setCookie('savedEmail', email, 7);
+				} else {
+					setCookie('savedEmail', '', 0);
+				}
+				document.getElementById('loginPassword').value = '';
+				goToDashboard();
+			} catch (error) {
+				err.textContent = firebaseErrorToMessage(error.code);
+			} finally {
+				setBusy(false);
+			}
 		};
 
 		function firebaseErrorToMessage(code) {
@@ -194,42 +225,61 @@
 				case 'auth/email-already-in-use':
 					return 'An account with this email already exists.';
 				case 'auth/invalid-email':
-					return 'Invalid email address.';
+					return 'Enter a valid email address.';
+				case 'auth/weak-password':
+					return 'Choose a stronger password.';
 				case 'auth/invalid-credential':
 				case 'auth/wrong-password':
 				case 'auth/user-not-found':
-					return '❌ Invalid Credentials';
+					return 'Invalid email or password.';
+				case 'auth/operation-not-allowed':
+					return 'This sign-in provider has not been enabled in Firebase yet.';
+				case 'auth/unauthorized-domain':
+					return 'This website domain is not authorized in Firebase Authentication.';
+				case 'auth/popup-blocked':
+					return 'Your browser blocked the sign-in popup. Allow popups and try again.';
+				case 'auth/popup-closed-by-user':
+				case 'auth/cancelled-popup-request':
+					return 'Sign-in was cancelled.';
+				case 'auth/account-exists-with-different-credential':
+					return 'An account already exists with this email. Sign in with its original provider first.';
+				case 'auth/network-request-failed':
+					return 'Network error. Check your connection and try again.';
 				default:
-					return 'Something went wrong. Please try again.';
+					return 'Sign-in failed. Please try again.';
 			}
 		}
 
-		function ssoLogin(provider) {
-			signInWithPopup(auth, provider)
-				.then((result) => {
-					alert('✓ Logged in as ' + result.user.email);
-					window.location.href = "website.html";
-				})
-				.catch((error) => {
-					document.getElementById('loginError').textContent = firebaseErrorToMessage(error.code);
-				});
+		async function ssoLogin(provider) {
+			const err = document.getElementById('loginError');
+			err.textContent = '';
+			setBusy(true);
+			try {
+				await signInWithPopup(auth, provider);
+				goToDashboard();
+			} catch (error) {
+				err.textContent = firebaseErrorToMessage(error.code);
+			} finally {
+				setBusy(false);
+			}
 		}
 
 		window.loginWithGoogle = function () {
-			ssoLogin(new GoogleAuthProvider());
+			const provider = new GoogleAuthProvider();
+			provider.setCustomParameters({ prompt: 'select_account' });
+			return ssoLogin(provider);
 		};
 
 		window.loginWithGithub = function () {
-			ssoLogin(new GithubAuthProvider());
+			return ssoLogin(new GithubAuthProvider());
 		};
 
 		window.loginWithMicrosoft = function () {
-			ssoLogin(new OAuthProvider('microsoft.com'));
+			const provider = new OAuthProvider('microsoft.com');
+			provider.setCustomParameters({ prompt: 'select_account' });
+			return ssoLogin(provider);
 		};
 
-		window.showRegister();
-
-		// Auto-fill email if a cookie was saved
 		const saved = getCookie('savedEmail');
 		if (saved) {
 			document.getElementById('loginEmail').value = saved;
