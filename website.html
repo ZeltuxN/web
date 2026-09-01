@@ -4,77 +4,191 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Dashboard</title>
+	<link
+		rel="stylesheet"
+		href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+		integrity="sha256-p4NxAoJBhIINfQ3ynikN2ryaABKHzuzU7N2CsTD2bKk="
+		crossorigin=""
+	>
 	<style>
-		* { box-sizing: border-box; }
-		body {
-			font-family: Arial, sans-serif;
-			margin: 0;
-			min-height: 100vh;
-			padding: 32px 20px;
-			background: #808080;
-			color: #111827;
+		:root {
+			color-scheme: light;
+			font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			background: #eef2f7;
+			color: #172033;
 		}
-		.dashboard { max-width: 900px; margin: 0 auto; }
+		* { box-sizing: border-box; }
+		body { margin: 0; min-height: 100vh; background: #eef2f7; }
+		button, input { font: inherit; }
+		button { cursor: pointer; }
+		button:disabled { cursor: wait; opacity: 0.6; }
+		.hidden { display: none !important; }
+		.shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
 		.profile {
 			display: flex;
 			align-items: center;
 			gap: 16px;
+			padding: 20px;
+			background: #fff;
+			border: 1px solid #dce3ec;
+			border-radius: 16px;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+			margin-bottom: 22px;
+		}
+		.avatar { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; background: #e5e7eb; }
+		h1 { margin: 0 0 4px; font-size: clamp(1.35rem, 3vw, 1.75rem); }
+		#userDetails { margin: 0; color: #667085; }
+		.signout { margin-left: auto; background: #fff; color: #b42318; border: 1px solid #f1b4ae; }
+		.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+		.card {
+			min-width: 0;
+			background: #fff;
+			border: 1px solid #dce3ec;
+			border-radius: 16px;
 			padding: 22px;
-			background: #fff;
-			border-radius: 10px;
-			box-shadow: 0 2px 10px rgba(0,0,0,0.14);
-			margin-bottom: 24px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 		}
-		.avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: #e5e7eb; }
-		h1 { margin: 0 0 5px; font-size: 24px; }
-		#userDetails { margin: 0; color: #4b5563; }
-		button {
-			margin-left: auto;
-			padding: 9px 15px;
-			background: #dc2626;
-			color: #fff;
-			font: inherit;
-			font-weight: 600;
-			border: 0;
-			border-radius: 5px;
-			cursor: pointer;
+		.card.wide { grid-column: 1 / -1; }
+		.card h2 { margin: 0 0 7px; font-size: 1.12rem; }
+		.card p { margin: 0 0 16px; color: #667085; line-height: 1.5; }
+		.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+		.primary, .secondary, .danger, .signout {
+			border-radius: 9px;
+			padding: 10px 14px;
+			font-weight: 700;
 		}
-		.iframe-container { display: grid; justify-items: center; gap: 20px; }
-		iframe {
-			width: min(100%, 720px);
-			border: none;
-			border-radius: 8px;
-			box-shadow: 0 2px 10px rgba(0,0,0,0.14);
-			background: #fff;
+		.primary { border: 1px solid #2563eb; background: #2563eb; color: #fff; }
+		.secondary { border: 1px solid #c7d2e0; background: #f8fafc; color: #27364d; }
+		.danger { border: 1px solid #f1b4ae; background: #fff; color: #b42318; }
+		.file-picker {
+			display: block;
+			border: 1px dashed #9fb0c5;
+			border-radius: 11px;
+			padding: 13px;
+			margin-bottom: 14px;
+			background: #f8fafc;
 		}
-		.hidden { display: none; }
-		@media (max-width: 520px) {
+		.file-picker input { display: block; width: 100%; margin-top: 8px; }
+		.preview { display: block; max-width: 100%; max-height: 260px; margin: 0 0 14px; border-radius: 11px; object-fit: contain; background: #f2f4f7; }
+		.progress { width: 100%; height: 9px; margin-top: 13px; accent-color: #2563eb; }
+		.status { min-height: 22px; margin-top: 12px; color: #475467; font-size: 0.9rem; overflow-wrap: anywhere; }
+		.status.error { color: #b42318; }
+		.status.success { color: #08783e; }
+		.status a { color: #175cd3; }
+		.events { display: grid; gap: 9px; padding: 0; margin: 14px 0 0; list-style: none; }
+		.event { padding: 11px 12px; border: 1px solid #e1e7ef; border-radius: 10px; background: #fbfcfe; }
+		.event strong { display: block; margin-bottom: 3px; }
+		.event time { color: #667085; font-size: 0.87rem; }
+		#map { height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid #dce3ec; }
+		.mono {
+			font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+			font-size: 0.86rem;
+			background: #f4f6f8;
+			border: 1px solid #e1e7ef;
+			border-radius: 9px;
+			padding: 10px;
+			word-break: break-all;
+		}
+		.privacy-note { font-size: 0.83rem; }
+		@media (max-width: 760px) {
+			.grid { grid-template-columns: 1fr; }
+			.card.wide { grid-column: auto; }
 			.profile { align-items: flex-start; flex-wrap: wrap; }
-			button { margin-left: 72px; }
+			.signout { margin-left: 74px; }
 		}
 	</style>
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
 <body>
-	<main id="dashboard" class="dashboard hidden">
-		<section class="profile">
+	<main id="dashboard" class="shell hidden">
+		<header class="profile">
 			<img id="userPhoto" class="avatar" alt="Profile photo">
 			<div>
 				<h1 id="welcome">Welcome!</h1>
 				<p id="userDetails"></p>
 			</div>
-			<button type="button" onclick="logout()">Sign out</button>
-		</section>
+			<button class="signout" type="button" onclick="logout()">Sign out</button>
+		</header>
 
-		<div class="iframe-container">
-			<iframe title="HTML on Wikipedia" src="https://en.wikipedia.org/wiki/HTML" height="300"></iframe>
-			<iframe title="Video" src="https://www.youtube.com/embed/dQw4w9WgXcQ" height="405" allowfullscreen></iframe>
+		<div class="grid">
+			<section class="card" aria-labelledby="mediaTitle">
+				<h2 id="mediaTitle">Capture or upload</h2>
+				<p>Take a photo on a supported device or choose an image. Uploads are limited to 5 MB.</p>
+				<label class="file-picker" for="mediaInput">
+					Choose image
+					<input id="mediaInput" type="file" accept="image/*" capture="environment">
+				</label>
+				<img id="mediaPreview" class="preview hidden" alt="Selected image preview">
+				<div class="actions">
+					<button id="uploadButton" class="primary" type="button" disabled>Upload to Firebase</button>
+					<button id="clearMediaButton" class="secondary" type="button" disabled>Clear</button>
+				</div>
+				<progress id="uploadProgress" class="progress hidden" max="100" value="0"></progress>
+				<div id="uploadStatus" class="status" role="status" aria-live="polite"></div>
+			</section>
+
+			<section class="card" aria-labelledby="calendarTitle">
+				<h2 id="calendarTitle">Google Calendar</h2>
+				<p>Request read-only access and show the next ten events from the primary calendar.</p>
+				<div class="actions">
+					<button id="calendarButton" class="primary" type="button">Connect Calendar</button>
+					<button id="refreshCalendarButton" class="secondary hidden" type="button">Refresh</button>
+					<button id="forgetCalendarButton" class="danger hidden" type="button">Forget access</button>
+				</div>
+				<div id="calendarStatus" class="status" role="status" aria-live="polite"></div>
+				<ul id="calendarEvents" class="events"></ul>
+			</section>
+
+			<section class="card wide" aria-labelledby="mapTitle">
+				<h2 id="mapTitle">Map</h2>
+				<p>The map works without a paid API key. Location is requested only after you click the button.</p>
+				<div class="actions" style="margin-bottom: 14px;">
+					<button id="locateButton" class="primary" type="button">Use my location</button>
+					<span id="locationStatus" class="status" role="status" aria-live="polite"></span>
+				</div>
+				<div id="map" aria-label="Interactive map"></div>
+			</section>
+
+			<section class="card" aria-labelledby="sessionTitle">
+				<h2 id="sessionTitle">Session cookie</h2>
+				<p>This creates a browser-session identifier with no email, UID, or authentication token.</p>
+				<div id="sessionValue" class="mono">Creating session…</div>
+				<div class="status privacy-note">Demo only: GitHub Pages cannot create a secure server-side <code>HttpOnly</code> authentication cookie. Firebase Authentication remains the real login session.</div>
+			</section>
+
+			<section class="card" aria-labelledby="fingerprintTitle">
+				<h2 id="fingerprintTitle">Browser fingerprint</h2>
+				<p>FingerprintJS runs only after consent. The identifier stays on this page and is not uploaded.</p>
+				<div class="actions">
+					<button id="fingerprintButton" class="primary" type="button">I agree — generate ID</button>
+					<button id="clearFingerprintButton" class="secondary hidden" type="button">Clear</button>
+				</div>
+				<div id="fingerprintStatus" class="status" role="status" aria-live="polite"></div>
+				<div id="fingerprintValue" class="mono hidden"></div>
+			</section>
 		</div>
 	</main>
 
+	<script
+		src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+		crossorigin=""
+	></script>
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-		import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+		import {
+			getAuth,
+			onAuthStateChanged,
+			signOut,
+			GoogleAuthProvider,
+			reauthenticateWithPopup,
+			linkWithPopup
+		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+		import {
+			getStorage,
+			ref,
+			uploadBytesResumable,
+			getDownloadURL
+		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 		const firebaseConfig = {
 			apiKey: "AIzaSyBcFRqMGQaeyyIvJywiiQok5NlJeTCh4PQ",
@@ -88,22 +202,327 @@
 
 		const app = initializeApp(firebaseConfig);
 		const auth = getAuth(app);
+		const storage = getStorage(app);
+		const sessionCookieName = 'demo_session';
+		const localPreviewMode = ['localhost', '127.0.0.1'].includes(location.hostname)
+			&& new URLSearchParams(location.search).has('preview');
+		const placeholderPhoto = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="58" height="58" viewBox="0 0 58 58"%3E%3Crect width="58" height="58" rx="29" fill="%23e5e7eb"/%3E%3Ccircle cx="29" cy="23" r="10" fill="%239ca3af"/%3E%3Cpath d="M10 53c2-12 9-18 19-18s17 6 19 18" fill="%239ca3af"/%3E%3C/svg%3E';
+
+		let currentUser = null;
+		let selectedFile = null;
+		let previewUrl = null;
+		let calendarAccessToken = null;
+		let map = null;
+		let userMarker = null;
+
+		const mediaInput = document.getElementById('mediaInput');
+		const mediaPreview = document.getElementById('mediaPreview');
+		const uploadButton = document.getElementById('uploadButton');
+		const clearMediaButton = document.getElementById('clearMediaButton');
+		const uploadProgress = document.getElementById('uploadProgress');
+		const uploadStatus = document.getElementById('uploadStatus');
+		const calendarButton = document.getElementById('calendarButton');
+		const refreshCalendarButton = document.getElementById('refreshCalendarButton');
+		const forgetCalendarButton = document.getElementById('forgetCalendarButton');
+		const calendarStatus = document.getElementById('calendarStatus');
+		const calendarEvents = document.getElementById('calendarEvents');
+
+		function getCookie(name) {
+			const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+			return match ? decodeURIComponent(match[1]) : null;
+		}
+
+		function ensureBrowserSessionCookie() {
+			let sessionId = getCookie(sessionCookieName);
+			if (!sessionId) {
+				sessionId = crypto.randomUUID();
+				const secure = location.protocol === 'https:' ? '; Secure' : '';
+				document.cookie = `${sessionCookieName}=${encodeURIComponent(sessionId)}; Path=/; SameSite=Strict${secure}`;
+			}
+			document.getElementById('sessionValue').textContent = sessionId || 'Cookies are blocked in this browser.';
+		}
+
+		function clearBrowserSessionCookie() {
+			const secure = location.protocol === 'https:' ? '; Secure' : '';
+			document.cookie = `${sessionCookieName}=; Path=/; Max-Age=0; SameSite=Strict${secure}`;
+		}
+
+		function initializeMap() {
+			if (map || !window.L) return;
+			map = L.map('map', { scrollWheelZoom: false }).setView([47.0105, 28.8638], 12);
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				maxZoom: 19,
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			}).addTo(map);
+			L.marker([47.0105, 28.8638]).addTo(map).bindPopup('Default location: Chișinău');
+		}
+
+		function clearSelectedMedia() {
+			if (previewUrl) URL.revokeObjectURL(previewUrl);
+			previewUrl = null;
+			selectedFile = null;
+			mediaInput.value = '';
+			mediaPreview.removeAttribute('src');
+			mediaPreview.classList.add('hidden');
+			uploadButton.disabled = true;
+			clearMediaButton.disabled = true;
+			uploadProgress.classList.add('hidden');
+			uploadProgress.value = 0;
+			uploadStatus.textContent = '';
+			uploadStatus.className = 'status';
+		}
+
+		mediaInput.addEventListener('change', () => {
+			const file = mediaInput.files?.[0];
+			if (!file) {
+				clearSelectedMedia();
+				return;
+			}
+			if (!file.type.startsWith('image/')) {
+				clearSelectedMedia();
+				uploadStatus.textContent = 'Choose an image file.';
+				uploadStatus.className = 'status error';
+				return;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				clearSelectedMedia();
+				uploadStatus.textContent = 'The image must be smaller than 5 MB.';
+				uploadStatus.className = 'status error';
+				return;
+			}
+
+			if (previewUrl) URL.revokeObjectURL(previewUrl);
+			selectedFile = file;
+			previewUrl = URL.createObjectURL(file);
+			mediaPreview.src = previewUrl;
+			mediaPreview.classList.remove('hidden');
+			uploadButton.disabled = false;
+			clearMediaButton.disabled = false;
+			uploadStatus.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} KB`;
+			uploadStatus.className = 'status';
+		});
+
+		clearMediaButton.addEventListener('click', clearSelectedMedia);
+
+		uploadButton.addEventListener('click', () => {
+			if (!currentUser || !selectedFile) return;
+			const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+			const objectRef = ref(storage, `uploads/${currentUser.uid}/${crypto.randomUUID()}-${safeName}`);
+			const task = uploadBytesResumable(objectRef, selectedFile, { contentType: selectedFile.type });
+			uploadButton.disabled = true;
+			uploadProgress.classList.remove('hidden');
+			uploadStatus.textContent = 'Uploading…';
+			uploadStatus.className = 'status';
+
+			task.on('state_changed',
+				(snapshot) => {
+					uploadProgress.value = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				},
+				(error) => {
+					uploadButton.disabled = false;
+					uploadStatus.textContent = error.code === 'storage/unauthorized'
+						? 'Upload denied. Enable Firebase Storage and deploy the included storage.rules file.'
+						: `Upload failed: ${error.message}`;
+					uploadStatus.className = 'status error';
+				},
+				async () => {
+					const downloadUrl = await getDownloadURL(task.snapshot.ref);
+					uploadStatus.replaceChildren();
+					const link = document.createElement('a');
+					link.href = downloadUrl;
+					link.target = '_blank';
+					link.rel = 'noopener noreferrer';
+					link.textContent = 'Upload complete — open image';
+					uploadStatus.append(link);
+					uploadStatus.className = 'status success';
+					clearMediaButton.disabled = false;
+				}
+			);
+		});
+
+		async function loadCalendarEvents() {
+			if (!calendarAccessToken) return;
+			calendarStatus.textContent = 'Loading upcoming events…';
+			calendarStatus.className = 'status';
+			calendarEvents.replaceChildren();
+			const params = new URLSearchParams({
+				timeMin: new Date().toISOString(),
+				showDeleted: 'false',
+				singleEvents: 'true',
+				maxResults: '10',
+				orderBy: 'startTime'
+			});
+
+			try {
+				const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
+					headers: { Authorization: `Bearer ${calendarAccessToken}` }
+				});
+				if (!response.ok) {
+					const problem = await response.json().catch(() => ({}));
+					throw new Error(problem.error?.message || `Calendar request failed (${response.status}).`);
+				}
+				const data = await response.json();
+				if (!data.items?.length) {
+					calendarStatus.textContent = 'No upcoming events found.';
+					return;
+				}
+
+				for (const event of data.items) {
+					const item = document.createElement('li');
+					item.className = 'event';
+					const title = document.createElement('strong');
+					title.textContent = event.summary || 'Untitled event';
+					const when = document.createElement('time');
+					const startValue = event.start?.dateTime || event.start?.date;
+					when.textContent = startValue ? new Date(startValue).toLocaleString() : 'Time unavailable';
+					item.append(title, when);
+					calendarEvents.append(item);
+				}
+				calendarStatus.textContent = 'Calendar connected with read-only access.';
+				calendarStatus.className = 'status success';
+			} catch (error) {
+				calendarStatus.textContent = `${error.message} Make sure the Google Calendar API is enabled for this Firebase project.`;
+				calendarStatus.className = 'status error';
+			}
+		}
+
+		calendarButton.addEventListener('click', async () => {
+			if (!currentUser) return;
+			calendarButton.disabled = true;
+			calendarStatus.textContent = 'Waiting for Google permission…';
+			calendarStatus.className = 'status';
+			const provider = new GoogleAuthProvider();
+			provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+			provider.setCustomParameters({ prompt: 'consent' });
+
+			try {
+				const hasGoogleProvider = currentUser.providerData.some((item) => item.providerId === 'google.com');
+				const result = hasGoogleProvider
+					? await reauthenticateWithPopup(currentUser, provider)
+					: await linkWithPopup(currentUser, provider);
+				const credential = GoogleAuthProvider.credentialFromResult(result);
+				if (!credential?.accessToken) throw new Error('Google did not return a Calendar access token.');
+				calendarAccessToken = credential.accessToken;
+				calendarButton.classList.add('hidden');
+				refreshCalendarButton.classList.remove('hidden');
+				forgetCalendarButton.classList.remove('hidden');
+				await loadCalendarEvents();
+			} catch (error) {
+				calendarStatus.textContent = error.code === 'auth/popup-closed-by-user'
+					? 'Calendar connection was cancelled.'
+					: `Calendar connection failed: ${error.message}`;
+				calendarStatus.className = 'status error';
+			} finally {
+				calendarButton.disabled = false;
+			}
+		});
+
+		refreshCalendarButton.addEventListener('click', loadCalendarEvents);
+		forgetCalendarButton.addEventListener('click', () => {
+			calendarAccessToken = null;
+			calendarEvents.replaceChildren();
+			calendarStatus.textContent = 'Calendar token removed from this page. Google consent was not revoked.';
+			calendarStatus.className = 'status';
+			calendarButton.classList.remove('hidden');
+			refreshCalendarButton.classList.add('hidden');
+			forgetCalendarButton.classList.add('hidden');
+		});
+
+		document.getElementById('locateButton').addEventListener('click', () => {
+			const status = document.getElementById('locationStatus');
+			if (!navigator.geolocation) {
+				status.textContent = 'Geolocation is not supported by this browser.';
+				return;
+			}
+			status.textContent = 'Waiting for location permission…';
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					const coordinates = [position.coords.latitude, position.coords.longitude];
+					map.setView(coordinates, 15);
+					if (userMarker) userMarker.remove();
+					userMarker = L.marker(coordinates).addTo(map).bindPopup('Your approximate location').openPopup();
+					status.textContent = `Located within about ${Math.round(position.coords.accuracy)} metres.`;
+				},
+				(error) => {
+					status.textContent = error.code === error.PERMISSION_DENIED
+						? 'Location permission was denied.'
+						: 'Your location could not be determined.';
+				},
+				{ enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+			);
+		});
+
+		document.getElementById('fingerprintButton').addEventListener('click', async () => {
+			const button = document.getElementById('fingerprintButton');
+			const status = document.getElementById('fingerprintStatus');
+			const value = document.getElementById('fingerprintValue');
+			button.disabled = true;
+			status.textContent = 'Computing locally…';
+			status.className = 'status';
+			try {
+				const FingerprintJS = await import('https://openfpcdn.io/fingerprintjs/v5');
+				const agent = await FingerprintJS.load();
+				const result = await agent.get();
+				value.textContent = result.visitorId;
+				value.classList.remove('hidden');
+				document.getElementById('clearFingerprintButton').classList.remove('hidden');
+				status.textContent = 'Generated locally. Nothing was uploaded by this page.';
+				status.className = 'status success';
+			} catch (error) {
+				status.textContent = `Fingerprinting was blocked or unavailable: ${error.message}`;
+				status.className = 'status error';
+			} finally {
+				button.disabled = false;
+			}
+		});
+
+		document.getElementById('clearFingerprintButton').addEventListener('click', () => {
+			document.getElementById('fingerprintValue').textContent = '';
+			document.getElementById('fingerprintValue').classList.add('hidden');
+			document.getElementById('fingerprintStatus').textContent = 'Identifier cleared from the page.';
+			document.getElementById('clearFingerprintButton').classList.add('hidden');
+		});
+
+		function showDashboard(user, isPreview = false) {
+			currentUser = isPreview ? null : user;
+			const name = user.displayName || user.email?.split('@')[0] || 'there';
+			const provider = user.providerData[0]?.providerId?.replace('.com', '') || 'email';
+			document.getElementById('welcome').textContent = `Welcome, ${name}!`;
+			document.getElementById('userDetails').textContent = isPreview
+				? 'Local preview · Authentication remains required on GitHub Pages'
+				: `${user.email || 'No email'} · Signed in with ${provider}`;
+			document.getElementById('userPhoto').src = user.photoURL || placeholderPhoto;
+			document.getElementById('dashboard').classList.remove('hidden');
+			if (isPreview) {
+				uploadStatus.textContent = 'Sign in to test Firebase uploads.';
+				calendarButton.disabled = true;
+				calendarStatus.textContent = 'Sign in to request Calendar access.';
+			}
+			ensureBrowserSessionCookie();
+			requestAnimationFrame(initializeMap);
+		}
 
 		onAuthStateChanged(auth, (user) => {
 			if (!user) {
+				if (localPreviewMode) {
+					showDashboard({
+						displayName: 'Preview User',
+						email: 'preview@example.com',
+						photoURL: null,
+						providerData: [{ providerId: 'preview' }]
+					}, true);
+					return;
+				}
 				window.location.replace('index.html');
 				return;
 			}
 
-			const name = user.displayName || user.email?.split('@')[0] || 'there';
-			const provider = user.providerData[0]?.providerId?.replace('.com', '') || 'email';
-			document.getElementById('welcome').textContent = `Welcome, ${name}!`;
-			document.getElementById('userDetails').textContent = `${user.email || 'No email'} · Signed in with ${provider}`;
-			document.getElementById('userPhoto').src = user.photoURL || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"%3E%3Crect width="56" height="56" rx="28" fill="%23e5e7eb"/%3E%3Ccircle cx="28" cy="22" r="10" fill="%239ca3af"/%3E%3Cpath d="M10 51c2-11 9-17 18-17s16 6 18 17" fill="%239ca3af"/%3E%3C/svg%3E';
-			document.getElementById('dashboard').classList.remove('hidden');
+			showDashboard(user);
 		});
 
 		window.logout = async function () {
+			calendarAccessToken = null;
+			clearBrowserSessionCookie();
 			await signOut(auth);
 		};
 	</script>
