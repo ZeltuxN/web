@@ -7,7 +7,7 @@
 	<link
 		rel="stylesheet"
 		href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
-		integrity="sha256-p4NxAoJBhIINfQ3ynikN2ryaABKHzuzU7N2CsTD2bKk="
+		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
 		crossorigin=""
 	>
 	<style>
@@ -119,15 +119,15 @@
 
 		<div class="grid">
 			<section class="card" aria-labelledby="mediaTitle">
-				<h2 id="mediaTitle">Capture or upload</h2>
-				<p>Take a photo on a supported device or choose an image. Uploads are limited to 5 MB.</p>
+				<h2 id="mediaTitle">Photos</h2>
+				<p>Take a photo or pick one from your device. Max size: 5 MB.</p>
 				<label class="file-picker" for="mediaInput">
 					Choose image
 					<input id="mediaInput" type="file" accept="image/*" capture="environment">
 				</label>
 				<img id="mediaPreview" class="preview hidden" alt="Selected image preview">
 				<div class="actions">
-					<button id="uploadButton" class="primary" type="button" disabled>Upload to Firebase</button>
+					<button id="uploadButton" class="primary" type="button" disabled>Upload</button>
 					<button id="clearMediaButton" class="secondary" type="button" disabled>Clear</button>
 				</div>
 				<progress id="uploadProgress" class="progress hidden" max="100" value="0"></progress>
@@ -136,11 +136,11 @@
 
 			<section class="card" aria-labelledby="calendarTitle">
 				<h2 id="calendarTitle">Google Calendar</h2>
-				<p>Request read-only access and show the next ten events from the primary calendar.</p>
+				<p>Connect your calendar to see your next 10 events.</p>
 				<div class="actions">
-					<button id="calendarButton" class="primary" type="button">Connect Calendar</button>
+					<button id="calendarButton" class="primary" type="button">Connect</button>
 					<button id="refreshCalendarButton" class="secondary hidden" type="button">Refresh</button>
-					<button id="forgetCalendarButton" class="danger hidden" type="button">Forget access</button>
+					<button id="forgetCalendarButton" class="danger hidden" type="button">Disconnect</button>
 				</div>
 				<div id="calendarStatus" class="status" role="status" aria-live="polite"></div>
 				<ul id="calendarEvents" class="events"></ul>
@@ -148,7 +148,7 @@
 
 			<section class="card wide" aria-labelledby="mapTitle">
 				<h2 id="mapTitle">Map</h2>
-				<p>The map works without a paid API key. Location is requested only after you click the button.</p>
+				<p>Click the button to show your location.</p>
 				<div class="actions" style="margin-bottom: 14px;">
 					<button id="locateButton" class="primary" type="button">Use my location</button>
 					<span id="locationStatus" class="status" role="status" aria-live="polite"></span>
@@ -157,17 +157,17 @@
 			</section>
 
 			<section class="card" aria-labelledby="sessionTitle">
-				<h2 id="sessionTitle">Session cookie</h2>
-				<p>This creates a browser-session identifier with no email, UID, or authentication token.</p>
+				<h2 id="sessionTitle">Browser session</h2>
+				<p>A random ID for this browser session. It is not used to sign you in.</p>
 				<div id="sessionValue" class="mono">Creating session…</div>
-				<div class="status privacy-note">Demo only: GitHub Pages cannot create a secure server-side <code>HttpOnly</code> authentication cookie. Firebase Authentication remains the real login session.</div>
+				<div class="status privacy-note">Firebase still handles the real sign-in.</div>
 			</section>
 
 			<section class="card" aria-labelledby="fingerprintTitle">
-				<h2 id="fingerprintTitle">Browser fingerprint</h2>
-				<p>FingerprintJS runs only after consent. The identifier stays on this page and is not uploaded.</p>
+				<h2 id="fingerprintTitle">Browser ID</h2>
+				<p>Create an ID only if you want to. It stays on this page.</p>
 				<div class="actions">
-					<button id="fingerprintButton" class="primary" type="button">I agree — generate ID</button>
+					<button id="fingerprintButton" class="primary" type="button">Create browser ID</button>
 					<button id="clearFingerprintButton" class="secondary hidden" type="button">Clear</button>
 				</div>
 				<div id="fingerprintStatus" class="status" role="status" aria-live="polite"></div>
@@ -175,8 +175,8 @@
 			</section>
 
 			<section class="card wide" aria-labelledby="embeddedTitle">
-				<h2 id="embeddedTitle">Embedded content</h2>
-				<p>The original website embeds are preserved below.</p>
+				<h2 id="embeddedTitle">Original embeds</h2>
+				<p>These are the two embeds from the old page.</p>
 				<div class="iframe-container">
 					<iframe title="HTML on Wikipedia" src="https://en.wikipedia.org/wiki/HTML" height="300" loading="lazy"></iframe>
 					<iframe title="Video" src="https://www.youtube.com/embed/dQw4w9WgXcQ" height="405" loading="lazy" allowfullscreen></iframe>
@@ -231,6 +231,7 @@
 		let calendarAccessToken = null;
 		let map = null;
 		let userMarker = null;
+		let accuracyCircle = null;
 
 		const mediaInput = document.getElementById('mediaInput');
 		const mediaPreview = document.getElementById('mediaPreview');
@@ -265,14 +266,23 @@
 		}
 
 		function initializeMap() {
-			if (map || !window.L) return;
-			map = L.map('map', { scrollWheelZoom: false }).setView([47.0105, 28.8638], 12);
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			if (!window.L) return;
+			if (!map) {
+				map = L.map('map', { scrollWheelZoom: false }).setView([47.0105, 28.8638], 12);
+				L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				maxZoom: 19,
-				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-			}).addTo(map);
-			L.marker([47.0105, 28.8638]).addTo(map).bindPopup('Default location: Chișinău');
+				updateWhenIdle: true,
+				keepBuffer: 4,
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+				}).addTo(map);
+				L.marker([47.0105, 28.8638]).addTo(map).bindPopup('Chișinău');
+			}
+			setTimeout(() => map.invalidateSize(true), 100);
 		}
+
+		window.addEventListener('resize', () => {
+			if (map) map.invalidateSize();
+		});
 
 		function clearSelectedMedia() {
 			if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -338,8 +348,8 @@
 				(error) => {
 					uploadButton.disabled = false;
 					uploadStatus.textContent = error.code === 'storage/unauthorized'
-						? 'Upload denied. Enable Firebase Storage and deploy the included storage.rules file.'
-						: `Upload failed: ${error.message}`;
+						? 'Uploads are not set up yet.'
+						: `Could not upload: ${error.message}`;
 					uploadStatus.className = 'status error';
 				},
 				async () => {
@@ -349,7 +359,7 @@
 					link.href = downloadUrl;
 					link.target = '_blank';
 					link.rel = 'noopener noreferrer';
-					link.textContent = 'Upload complete — open image';
+					link.textContent = 'Uploaded — open image';
 					uploadStatus.append(link);
 					uploadStatus.className = 'status success';
 					clearMediaButton.disabled = false;
@@ -359,7 +369,7 @@
 
 		async function loadCalendarEvents() {
 			if (!calendarAccessToken) return;
-			calendarStatus.textContent = 'Loading upcoming events…';
+			calendarStatus.textContent = 'Loading events…';
 			calendarStatus.className = 'status';
 			calendarEvents.replaceChildren();
 			const params = new URLSearchParams({
@@ -380,7 +390,7 @@
 				}
 				const data = await response.json();
 				if (!data.items?.length) {
-					calendarStatus.textContent = 'No upcoming events found.';
+					calendarStatus.textContent = 'No upcoming events.';
 					return;
 				}
 
@@ -395,10 +405,10 @@
 					item.append(title, when);
 					calendarEvents.append(item);
 				}
-				calendarStatus.textContent = 'Calendar connected with read-only access.';
+				calendarStatus.textContent = 'Calendar connected.';
 				calendarStatus.className = 'status success';
 			} catch (error) {
-				calendarStatus.textContent = `${error.message} Make sure the Google Calendar API is enabled for this Firebase project.`;
+				calendarStatus.textContent = `Could not load the calendar: ${error.message}`;
 				calendarStatus.className = 'status error';
 			}
 		}
@@ -406,7 +416,7 @@
 		calendarButton.addEventListener('click', async () => {
 			if (!currentUser) return;
 			calendarButton.disabled = true;
-			calendarStatus.textContent = 'Waiting for Google permission…';
+			calendarStatus.textContent = 'Waiting for Google…';
 			calendarStatus.className = 'status';
 			const provider = new GoogleAuthProvider();
 			provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
@@ -426,8 +436,8 @@
 				await loadCalendarEvents();
 			} catch (error) {
 				calendarStatus.textContent = error.code === 'auth/popup-closed-by-user'
-					? 'Calendar connection was cancelled.'
-					: `Calendar connection failed: ${error.message}`;
+					? 'Nothing changed.'
+					: `Could not connect: ${error.message}`;
 				calendarStatus.className = 'status error';
 			} finally {
 				calendarButton.disabled = false;
@@ -438,7 +448,7 @@
 		forgetCalendarButton.addEventListener('click', () => {
 			calendarAccessToken = null;
 			calendarEvents.replaceChildren();
-			calendarStatus.textContent = 'Calendar token removed from this page. Google consent was not revoked.';
+			calendarStatus.textContent = 'Calendar disconnected.';
 			calendarStatus.className = 'status';
 			calendarButton.classList.remove('hidden');
 			refreshCalendarButton.classList.add('hidden');
@@ -448,22 +458,35 @@
 		document.getElementById('locateButton').addEventListener('click', () => {
 			const status = document.getElementById('locationStatus');
 			if (!navigator.geolocation) {
-				status.textContent = 'Geolocation is not supported by this browser.';
+				status.textContent = 'This browser cannot use your location.';
 				return;
 			}
-			status.textContent = 'Waiting for location permission…';
+			status.textContent = 'Getting your location…';
 			navigator.geolocation.getCurrentPosition(
 				(position) => {
 					const coordinates = [position.coords.latitude, position.coords.longitude];
-					map.setView(coordinates, 15);
+					const accuracy = Math.round(position.coords.accuracy);
+					const zoom = accuracy > 20000 ? 9 : accuracy > 5000 ? 11 : accuracy > 1000 ? 13 : 15;
+					map.setView(coordinates, zoom);
 					if (userMarker) userMarker.remove();
-					userMarker = L.marker(coordinates).addTo(map).bindPopup('Your approximate location').openPopup();
-					status.textContent = `Located within about ${Math.round(position.coords.accuracy)} metres.`;
+					if (accuracyCircle) accuracyCircle.remove();
+					accuracyCircle = L.circle(coordinates, {
+						radius: accuracy,
+						color: '#2563eb',
+						fillColor: '#93c5fd',
+						fillOpacity: 0.15,
+						weight: 1
+					}).addTo(map);
+					userMarker = L.marker(coordinates).addTo(map).bindPopup('Your location').openPopup();
+					status.textContent = accuracy >= 1000
+						? `Location found (about ${(accuracy / 1000).toFixed(1)} km accuracy).`
+						: `Location found (about ${accuracy} m accuracy).`;
+					map.invalidateSize();
 				},
 				(error) => {
 					status.textContent = error.code === error.PERMISSION_DENIED
-						? 'Location permission was denied.'
-						: 'Your location could not be determined.';
+						? 'Location access was blocked.'
+						: 'Could not find your location.';
 				},
 				{ enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
 			);
@@ -474,7 +497,7 @@
 			const status = document.getElementById('fingerprintStatus');
 			const value = document.getElementById('fingerprintValue');
 			button.disabled = true;
-			status.textContent = 'Computing locally…';
+			status.textContent = 'Creating an ID…';
 			status.className = 'status';
 			try {
 				const FingerprintJS = await import('https://openfpcdn.io/fingerprintjs/v5');
@@ -483,10 +506,10 @@
 				value.textContent = result.visitorId;
 				value.classList.remove('hidden');
 				document.getElementById('clearFingerprintButton').classList.remove('hidden');
-				status.textContent = 'Generated locally. Nothing was uploaded by this page.';
+				status.textContent = 'Done. This page did not save or send it.';
 				status.className = 'status success';
 			} catch (error) {
-				status.textContent = `Fingerprinting was blocked or unavailable: ${error.message}`;
+				status.textContent = `Could not create an ID: ${error.message}`;
 				status.className = 'status error';
 			} finally {
 				button.disabled = false;
@@ -496,7 +519,7 @@
 		document.getElementById('clearFingerprintButton').addEventListener('click', () => {
 			document.getElementById('fingerprintValue').textContent = '';
 			document.getElementById('fingerprintValue').classList.add('hidden');
-			document.getElementById('fingerprintStatus').textContent = 'Identifier cleared from the page.';
+			document.getElementById('fingerprintStatus').textContent = 'Browser ID cleared.';
 			document.getElementById('clearFingerprintButton').classList.add('hidden');
 		});
 
@@ -506,14 +529,14 @@
 			const provider = user.providerData[0]?.providerId?.replace('.com', '') || 'email';
 			document.getElementById('welcome').textContent = `Welcome, ${name}!`;
 			document.getElementById('userDetails').textContent = isPreview
-				? 'Local preview · Authentication remains required on GitHub Pages'
-				: `${user.email || 'No email'} · Signed in with ${provider}`;
+				? 'Local preview'
+				: `${user.email || 'No email'} · ${provider}`;
 			document.getElementById('userPhoto').src = user.photoURL || placeholderPhoto;
 			document.getElementById('dashboard').classList.remove('hidden');
 			if (isPreview) {
-				uploadStatus.textContent = 'Sign in to test Firebase uploads.';
+				uploadStatus.textContent = 'Sign in to upload.';
 				calendarButton.disabled = true;
-				calendarStatus.textContent = 'Sign in to request Calendar access.';
+				calendarStatus.textContent = 'Sign in to connect your calendar.';
 			}
 			ensureBrowserSessionCookie();
 			requestAnimationFrame(initializeMap);
