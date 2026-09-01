@@ -79,6 +79,14 @@
 		.event { padding: 11px 12px; border: 1px solid #e1e7ef; border-radius: 10px; background: #fbfcfe; }
 		.event strong { display: block; margin-bottom: 3px; }
 		.event time { color: #667085; font-size: 0.87rem; }
+		.iframe-container { display: grid; justify-items: center; gap: 20px; }
+		.iframe-container iframe {
+			width: min(100%, 720px);
+			border: 0;
+			border-radius: 12px;
+			box-shadow: 0 2px 10px rgba(15, 23, 42, 0.14);
+			background: #fff;
+		}
 		#map { height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid #dce3ec; }
 		.mono {
 			font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -164,6 +172,15 @@
 				</div>
 				<div id="fingerprintStatus" class="status" role="status" aria-live="polite"></div>
 				<div id="fingerprintValue" class="mono hidden"></div>
+			</section>
+
+			<section class="card wide" aria-labelledby="embeddedTitle">
+				<h2 id="embeddedTitle">Embedded content</h2>
+				<p>The original website embeds are preserved below.</p>
+				<div class="iframe-container">
+					<iframe title="HTML on Wikipedia" src="https://en.wikipedia.org/wiki/HTML" height="300" loading="lazy"></iframe>
+					<iframe title="Video" src="https://www.youtube.com/embed/dQw4w9WgXcQ" height="405" loading="lazy" allowfullscreen></iframe>
+				</div>
 			</section>
 		</div>
 	</main>
