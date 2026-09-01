@@ -50,7 +50,6 @@
 		}
 		.card.wide { grid-column: 1 / -1; }
 		.card h2 { margin: 0 0 7px; font-size: 1.12rem; }
-		.card p { margin: 0 0 16px; color: #667085; line-height: 1.5; }
 		.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 		.primary, .secondary, .danger, .signout {
 			border-radius: 9px;
@@ -97,7 +96,6 @@
 			padding: 10px;
 			word-break: break-all;
 		}
-		.privacy-note { font-size: 0.83rem; }
 		@media (max-width: 760px) {
 			.grid { grid-template-columns: 1fr; }
 			.card.wide { grid-column: auto; }
@@ -120,7 +118,6 @@
 		<div class="grid">
 			<section class="card" aria-labelledby="mediaTitle">
 				<h2 id="mediaTitle">Photos</h2>
-				<p>Take a photo or pick one from your device. Max size: 5 MB.</p>
 				<label class="file-picker" for="mediaInput">
 					Choose image
 					<input id="mediaInput" type="file" accept="image/*" capture="environment">
@@ -136,7 +133,6 @@
 
 			<section class="card" aria-labelledby="calendarTitle">
 				<h2 id="calendarTitle">Google Calendar</h2>
-				<p>Connect your calendar to see your next 10 events.</p>
 				<div class="actions">
 					<button id="calendarButton" class="primary" type="button">Connect</button>
 					<button id="refreshCalendarButton" class="secondary hidden" type="button">Refresh</button>
@@ -148,7 +144,6 @@
 
 			<section class="card wide" aria-labelledby="mapTitle">
 				<h2 id="mapTitle">Map</h2>
-				<p>Click the button to show your location.</p>
 				<div class="actions" style="margin-bottom: 14px;">
 					<button id="locateButton" class="primary" type="button">Use my location</button>
 					<span id="locationStatus" class="status" role="status" aria-live="polite"></span>
@@ -158,14 +153,11 @@
 
 			<section class="card" aria-labelledby="sessionTitle">
 				<h2 id="sessionTitle">Browser session</h2>
-				<p>A random ID for this browser session. It is not used to sign you in.</p>
 				<div id="sessionValue" class="mono">Creating session…</div>
-				<div class="status privacy-note">Firebase still handles the real sign-in.</div>
 			</section>
 
 			<section class="card" aria-labelledby="fingerprintTitle">
 				<h2 id="fingerprintTitle">Browser ID</h2>
-				<p>Create an ID only if you want to. It stays on this page.</p>
 				<div class="actions">
 					<button id="fingerprintButton" class="primary" type="button">Create browser ID</button>
 					<button id="clearFingerprintButton" class="secondary hidden" type="button">Clear</button>
@@ -175,8 +167,7 @@
 			</section>
 
 			<section class="card wide" aria-labelledby="embeddedTitle">
-				<h2 id="embeddedTitle">Original embeds</h2>
-				<p>These are the two embeds from the old page.</p>
+				<h2 id="embeddedTitle">More</h2>
 				<div class="iframe-container">
 					<iframe title="HTML on Wikipedia" src="https://en.wikipedia.org/wiki/HTML" height="300" loading="lazy"></iframe>
 					<iframe title="Video" src="https://www.youtube.com/embed/dQw4w9WgXcQ" height="405" loading="lazy" allowfullscreen></iframe>
