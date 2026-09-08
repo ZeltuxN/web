@@ -2,7 +2,7 @@
 
 This GitHub Pages site uses Firebase Authentication and includes a signed-in dashboard with:
 
-- camera/photo selection and Firebase Storage upload;
+- camera/photo selection with Firebase Storage upload and a browser-storage fallback;
 - read-only Google Calendar access requested only when the user clicks Connect;
 - an OpenStreetMap/Leaflet map with optional browser geolocation;
 - an opt-in FingerprintJS v5 visitor identifier;
@@ -17,6 +17,8 @@ firebase deploy --only storage
 ```
 
 Uploads are limited to signed-in users, their own `uploads/{uid}` path, image MIME types, and files smaller than 5 MB.
+
+If Firebase Storage is unavailable, the page saves the photo in IndexedDB for the signed-in user. Those photos survive reloads in the same browser and device, but they are not synced to other devices.
 
 ## Google Calendar
 

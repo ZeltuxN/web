@@ -4,11 +4,11 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Dashboard</title>
-	<link
-		rel="stylesheet"
-		href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
-		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-		crossorigin=""
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+			integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+			crossorigin
 	>
 	<style>
 		:root {
@@ -90,6 +90,7 @@
 			background: #fff;
 		}
 		#map { height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid #dce3ec; }
+		.map-actions { margin-bottom: 14px; }
 		.mono {
 			font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 			font-size: 0.86rem;
@@ -110,7 +111,7 @@
 <body>
 	<main id="dashboard" class="shell hidden">
 		<header class="profile">
-			<img id="userPhoto" class="avatar" alt="Profile photo">
+			<img id="userPhoto" class="avatar" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Profile photo">
 			<div>
 				<h1 id="welcome">Welcome!</h1>
 				<p id="userDetails"></p>
@@ -121,18 +122,18 @@
 		<div class="grid">
 			<section class="card" aria-labelledby="mediaTitle">
 				<h2 id="mediaTitle">Photos</h2>
-				<label class="file-picker" for="mediaInput">
+				<label class="file-picker">
 					Choose image
 					<input id="mediaInput" type="file" accept="image/*" capture="environment">
 				</label>
-				<img id="mediaPreview" class="preview hidden" alt="Selected image preview">
+				<img id="mediaPreview" class="preview hidden" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Selected image preview">
 				<div class="actions">
 					<button id="uploadButton" class="primary" type="button" disabled>Upload</button>
 					<button id="clearMediaButton" class="secondary" type="button" disabled>Clear</button>
 				</div>
 				<progress id="uploadProgress" class="progress hidden" max="100" value="0"></progress>
 				<div id="uploadStatus" class="status" role="status" aria-live="polite"></div>
-				<div id="savedPhotos" class="saved-photos" aria-label="Saved photos"></div>
+				<div id="savedPhotos" class="saved-photos"></div>
 			</section>
 
 			<section class="card" aria-labelledby="calendarTitle">
@@ -148,11 +149,11 @@
 
 			<section class="card wide" aria-labelledby="mapTitle">
 				<h2 id="mapTitle">Map</h2>
-				<div class="actions" style="margin-bottom: 14px;">
+				<div class="actions map-actions">
 					<button id="locateButton" class="primary" type="button">Use my location</button>
 					<span id="locationStatus" class="status" role="status" aria-live="polite"></span>
 				</div>
-				<div id="map" aria-label="Interactive map"></div>
+				<section id="map" aria-label="Interactive map"></section>
 			</section>
 
 			<section class="card" aria-labelledby="sessionTitle">
@@ -180,10 +181,10 @@
 		</div>
 	</main>
 
-	<script
-		src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
-		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-		crossorigin=""
+		<script
+			src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+			integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+			crossorigin
 	></script>
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -230,6 +231,8 @@
 		let accuracyCircle = null;
 		let locationWatchId = null;
 		let locationStopTimer = null;
+		let photoDatabasePromise = null;
+		let localPhotoUrls = [];
 
 		const mediaInput = document.getElementById('mediaInput');
 		const mediaPreview = document.getElementById('mediaPreview');
@@ -265,14 +268,18 @@
 		}
 
 		function initializeMap() {
-			if (!window.L) return;
+			if (!window.L) {
+				document.getElementById('locateButton').disabled = true;
+				document.getElementById('locationStatus').textContent = 'Map unavailable.';
+				return;
+			}
 			if (!map) {
 				map = L.map('map', { scrollWheelZoom: false }).setView([47.0105, 28.8638], 12);
 				L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				maxZoom: 19,
-				updateWhenIdle: true,
-				keepBuffer: 4,
-				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+					maxZoom: 19,
+					updateWhenIdle: true,
+					keepBuffer: 4,
+					attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 				}).addTo(map);
 				L.marker([47.0105, 28.8638]).addTo(map).bindPopup('Chișinău');
 			}
@@ -298,6 +305,76 @@
 			uploadStatus.className = 'status';
 		}
 
+		function getPhotoDatabase() {
+			if (photoDatabasePromise) return photoDatabasePromise;
+			photoDatabasePromise = new Promise((resolve, reject) => {
+				if (!window.indexedDB) {
+					reject(new Error('Browser storage is unavailable.'));
+					return;
+				}
+
+				const request = indexedDB.open('testing-website-media', 1);
+				request.onupgradeneeded = () => {
+					const database = request.result;
+					if (!database.objectStoreNames.contains('photos')) {
+						const store = database.createObjectStore('photos', { keyPath: 'id' });
+						store.createIndex('userId', 'userId', { unique: false });
+					}
+				};
+				request.onsuccess = () => resolve(request.result);
+				request.onerror = () => reject(request.error || new Error('Browser storage could not be opened.'));
+				request.onblocked = () => reject(new Error('Browser storage is busy in another tab.'));
+			});
+			return photoDatabasePromise;
+		}
+
+		async function savePhotoInBrowser(file, userId) {
+			const database = await getPhotoDatabase();
+			return new Promise((resolve, reject) => {
+				const transaction = database.transaction('photos', 'readwrite');
+				transaction.objectStore('photos').put({
+					id: crypto.randomUUID(),
+					userId,
+					name: file.name,
+					type: file.type,
+					blob: file,
+					createdAt: Date.now()
+				});
+				transaction.oncomplete = resolve;
+				transaction.onerror = () => reject(transaction.error || new Error('Photo could not be saved.'));
+				transaction.onabort = () => reject(transaction.error || new Error('Photo could not be saved.'));
+			});
+		}
+
+		async function getBrowserPhotos(userId) {
+			const database = await getPhotoDatabase();
+			return new Promise((resolve, reject) => {
+				const transaction = database.transaction('photos', 'readonly');
+				const request = transaction.objectStore('photos').index('userId').getAll(userId);
+				request.onsuccess = () => resolve(request.result.sort((a, b) => b.createdAt - a.createdAt));
+				request.onerror = () => reject(request.error || new Error('Photos could not be loaded.'));
+			});
+		}
+
+		function clearLocalPhotoUrls() {
+			for (const url of localPhotoUrls) URL.revokeObjectURL(url);
+			localPhotoUrls = [];
+		}
+
+		function addSavedPhoto(url, number) {
+			const link = document.createElement('a');
+			link.className = 'saved-photo';
+			link.href = url;
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
+			const image = document.createElement('img');
+			image.src = url;
+			image.alt = `Saved photo ${number}`;
+			image.loading = 'lazy';
+			link.append(image);
+			savedPhotos.append(link);
+		}
+
 		mediaInput.addEventListener('change', () => {
 			const file = mediaInput.files?.[0];
 			if (!file) {
@@ -310,7 +387,7 @@
 				uploadStatus.className = 'status error';
 				return;
 			}
-			if (file.size > 5 * 1024 * 1024) {
+			if (file.size >= 5 * 1024 * 1024) {
 				clearSelectedMedia();
 				uploadStatus.textContent = 'The image must be smaller than 5 MB.';
 				uploadStatus.className = 'status error';
@@ -332,37 +409,46 @@
 
 		async function loadSavedPhotos() {
 			if (!currentUser) return;
+			clearLocalPhotoUrls();
 			savedPhotos.replaceChildren();
+			let photoCount = 0;
+
+			try {
+				const browserPhotos = await getBrowserPhotos(currentUser.uid);
+				for (const photo of browserPhotos) {
+					const url = URL.createObjectURL(photo.blob);
+					localPhotoUrls.push(url);
+					addSavedPhoto(url, ++photoCount);
+				}
+			} catch {
+				// Firebase can still be used if this browser blocks IndexedDB.
+			}
 
 			try {
 				const result = await listAll(ref(storage, `uploads/${currentUser.uid}`));
-				const urls = await Promise.all(result.items.map((item) => getDownloadURL(item)));
-				for (const [index, url] of urls.entries()) {
-					const link = document.createElement('a');
-					link.className = 'saved-photo';
-					link.href = url;
-					link.target = '_blank';
-					link.rel = 'noopener noreferrer';
-					const image = document.createElement('img');
-					image.src = url;
-					image.alt = `Saved photo ${index + 1}`;
-					image.loading = 'lazy';
-					link.append(image);
-					savedPhotos.append(link);
+				const urlResults = await Promise.allSettled(result.items.map((item) => getDownloadURL(item)));
+				const urls = urlResults.filter((item) => item.status === 'fulfilled').map((item) => item.value);
+				if (result.items.length > 0 && urls.length === 0 && photoCount === 0) {
+					throw new Error('Photo links are unavailable.');
 				}
+				for (const url of urls) addSavedPhoto(url, ++photoCount);
 			} catch (error) {
-				uploadStatus.textContent = error.code === 'storage/unauthorized'
-					? 'Photos are not set up yet.'
-					: `Could not load photos: ${error.message}`;
-				uploadStatus.className = 'status error';
+				if (photoCount === 0) {
+					uploadStatus.textContent = error.code === 'storage/unauthorized'
+						? 'Photos are not set up yet.'
+						: 'Cloud photos are unavailable.';
+					uploadStatus.className = 'status error';
+				}
 			}
 		}
 
 		uploadButton.addEventListener('click', () => {
 			if (!currentUser || !selectedFile) return;
-			const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-			const objectRef = ref(storage, `uploads/${currentUser.uid}/${crypto.randomUUID()}-${safeName}`);
-			const task = uploadBytesResumable(objectRef, selectedFile, { contentType: selectedFile.type });
+			const fileToSave = selectedFile;
+			const userId = currentUser.uid;
+			const safeName = fileToSave.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+			const objectRef = ref(storage, `uploads/${userId}/${crypto.randomUUID()}-${safeName}`);
+			const task = uploadBytesResumable(objectRef, fileToSave, { contentType: fileToSave.type });
 			uploadButton.disabled = true;
 			uploadProgress.classList.remove('hidden');
 			uploadStatus.textContent = 'Uploading…';
@@ -372,18 +458,27 @@
 				(snapshot) => {
 					uploadProgress.value = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
 				},
-				(error) => {
-					uploadButton.disabled = false;
-					uploadStatus.textContent = error.code === 'storage/unauthorized'
-						? 'Uploads are not set up yet.'
-						: `Could not upload: ${error.message}`;
-					uploadStatus.className = 'status error';
+				async (error) => {
+					uploadProgress.classList.add('hidden');
+					uploadProgress.value = 0;
+					try {
+						await savePhotoInBrowser(fileToSave, userId);
+						clearSelectedMedia();
+						uploadStatus.textContent = 'Saved on this browser.';
+						uploadStatus.className = 'status success';
+						if (currentUser?.uid === userId) await loadSavedPhotos();
+					} catch {
+						uploadButton.disabled = false;
+						uploadStatus.textContent = error.code === 'storage/unauthorized'
+							? 'Uploads are not set up yet.'
+							: `Could not upload: ${error.message}`;
+						uploadStatus.className = 'status error';
+					}
 				},
 				async () => {
-					await getDownloadURL(task.snapshot.ref);
+					clearSelectedMedia();
 					uploadStatus.textContent = 'Uploaded.';
 					uploadStatus.className = 'status success';
-					clearMediaButton.disabled = false;
 					await loadSavedPhotos();
 				}
 			);
@@ -422,8 +517,13 @@
 					const title = document.createElement('strong');
 					title.textContent = event.summary || 'Untitled event';
 					const when = document.createElement('time');
-					const startValue = event.start?.dateTime || event.start?.date;
-					when.textContent = startValue ? new Date(startValue).toLocaleString() : 'Time unavailable';
+					if (event.start?.dateTime) {
+						when.textContent = new Date(event.start.dateTime).toLocaleString();
+					} else if (event.start?.date) {
+						when.textContent = new Date(`${event.start.date}T00:00:00`).toLocaleDateString();
+					} else {
+						when.textContent = 'Time unavailable';
+					}
 					item.append(title, when);
 					calendarEvents.append(item);
 				}
@@ -491,6 +591,10 @@
 				status.textContent = 'This browser cannot use your location.';
 				return;
 			}
+			if (!map || !window.L) {
+				initializeMap();
+				if (!map) return;
+			}
 
 			stopLocationWatch();
 			let bestAccuracy = Infinity;
@@ -543,6 +647,12 @@
 			}, 30000);
 		});
 
+		window.addEventListener('pagehide', () => {
+			stopLocationWatch();
+			if (previewUrl) URL.revokeObjectURL(previewUrl);
+			clearLocalPhotoUrls();
+		});
+
 		document.getElementById('fingerprintButton').addEventListener('click', async () => {
 			const button = document.getElementById('fingerprintButton');
 			const status = document.getElementById('fingerprintStatus');
@@ -582,7 +692,12 @@
 			document.getElementById('userDetails').textContent = isPreview
 				? 'Local preview'
 				: `${user.email || 'No email'} · ${provider}`;
-			document.getElementById('userPhoto').src = user.photoURL || placeholderPhoto;
+			const userPhoto = document.getElementById('userPhoto');
+			userPhoto.onerror = () => {
+				userPhoto.onerror = null;
+				userPhoto.src = placeholderPhoto;
+			};
+			userPhoto.src = user.photoURL || placeholderPhoto;
 			document.getElementById('dashboard').classList.remove('hidden');
 			if (isPreview) {
 				uploadStatus.textContent = 'Sign in to upload.';

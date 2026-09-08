@@ -112,7 +112,8 @@
 			OAuthProvider,
 			signInWithPopup,
 			setPersistence,
-			browserLocalPersistence
+			browserLocalPersistence,
+			onAuthStateChanged
 		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 		const firebaseConfig = {
@@ -127,11 +128,13 @@
 
 		const app = initializeApp(firebaseConfig);
 		const auth = getAuth(app);
-		setPersistence(auth, browserLocalPersistence).catch(console.error);
+		const persistenceReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
+		let authActionInProgress = false;
 
 		function setCookie(name, value, days) {
-			const expires = new Date(Date.now() + days * 86400000).toUTCString();
-			document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+			const maxAge = Math.max(0, Math.round(days * 86400));
+			const secure = location.protocol === 'https:' ? '; Secure' : '';
+			document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
 		}
 
 		function getCookie(name) {
@@ -162,6 +165,7 @@
 		};
 
 		window.register = async function () {
+			if (authActionInProgress) return;
 			const email = document.getElementById('regEmail').value.trim();
 			const pass = document.getElementById('regPassword').value;
 			const confirm = document.getElementById('regConfirm').value;
@@ -182,17 +186,21 @@
 			}
 
 			setBusy(true);
+			authActionInProgress = true;
 			try {
+				await persistenceReady;
 				await createUserWithEmailAndPassword(auth, email, pass);
 				goToDashboard();
 			} catch (error) {
 				err.textContent = firebaseErrorToMessage(error.code);
 			} finally {
+				authActionInProgress = false;
 				setBusy(false);
 			}
 		};
 
 		window.login = async function () {
+			if (authActionInProgress) return;
 			const email = document.getElementById('loginEmail').value.trim();
 			const pass = document.getElementById('loginPassword').value;
 			const err = document.getElementById('loginError');
@@ -204,7 +212,9 @@
 			}
 
 			setBusy(true);
+			authActionInProgress = true;
 			try {
+				await persistenceReady;
 				await signInWithEmailAndPassword(auth, email, pass);
 				if (document.getElementById('rememberMe').checked) {
 					setCookie('savedEmail', email, 7);
@@ -216,6 +226,7 @@
 			} catch (error) {
 				err.textContent = firebaseErrorToMessage(error.code);
 			} finally {
+				authActionInProgress = false;
 				setBusy(false);
 			}
 		};
@@ -251,15 +262,19 @@
 		}
 
 		async function ssoLogin(provider) {
+			if (authActionInProgress) return;
 			const err = document.getElementById('loginError');
 			err.textContent = '';
 			setBusy(true);
+			authActionInProgress = true;
 			try {
+				await persistenceReady;
 				await signInWithPopup(auth, provider);
 				goToDashboard();
 			} catch (error) {
 				err.textContent = firebaseErrorToMessage(error.code);
 			} finally {
+				authActionInProgress = false;
 				setBusy(false);
 			}
 		}
@@ -285,6 +300,17 @@
 			document.getElementById('loginEmail').value = saved;
 			document.getElementById('rememberMe').checked = true;
 		}
+
+		document.getElementById('loginPassword').addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') window.login();
+		});
+		document.getElementById('regConfirm').addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') window.register();
+		});
+
+		onAuthStateChanged(auth, (user) => {
+			if (user && !authActionInProgress) goToDashboard();
+		});
 	</script>
 </body>
 </html>
