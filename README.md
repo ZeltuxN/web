@@ -4,7 +4,7 @@ This GitHub Pages site uses Firebase Authentication and includes a signed-in das
 
 - camera/photo selection with Firebase Storage upload and a browser-storage fallback;
 - read-only Google Calendar access requested only when the user clicks Connect;
-- an OpenStreetMap/Leaflet map with optional browser geolocation;
+- an OpenStreetMap/Leaflet map with high-accuracy browser geolocation and manual map picking;
 - an opt-in FingerprintJS v5 visitor identifier;
 - a non-authentication browser-session cookie demonstration.
 

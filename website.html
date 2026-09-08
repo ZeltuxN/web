@@ -90,6 +90,7 @@
 			background: #fff;
 		}
 		#map { height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid #dce3ec; }
+		#map.picking-location, #map.picking-location .leaflet-grab { cursor: crosshair; }
 		.map-actions { margin-bottom: 14px; }
 		.mono {
 			font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -151,6 +152,7 @@
 				<h2 id="mapTitle">Map</h2>
 				<div class="actions map-actions">
 					<button id="locateButton" class="primary" type="button">Use my location</button>
+					<button id="pickLocationButton" class="secondary" type="button">Pick on map</button>
 					<span id="locationStatus" class="status" role="status" aria-live="polite"></span>
 				</div>
 				<section id="map" aria-label="Interactive map"></section>
@@ -231,6 +233,7 @@
 		let accuracyCircle = null;
 		let locationWatchId = null;
 		let locationStopTimer = null;
+		let isPickingLocation = false;
 		let photoDatabasePromise = null;
 		let localPhotoUrls = [];
 
@@ -246,6 +249,10 @@
 		const forgetCalendarButton = document.getElementById('forgetCalendarButton');
 		const calendarStatus = document.getElementById('calendarStatus');
 		const calendarEvents = document.getElementById('calendarEvents');
+		const locateButton = document.getElementById('locateButton');
+		const pickLocationButton = document.getElementById('pickLocationButton');
+		const locationStatus = document.getElementById('locationStatus');
+		const mapElement = document.getElementById('map');
 
 		function getCookie(name) {
 			const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -269,8 +276,9 @@
 
 		function initializeMap() {
 			if (!window.L) {
-				document.getElementById('locateButton').disabled = true;
-				document.getElementById('locationStatus').textContent = 'Map unavailable.';
+				locateButton.disabled = true;
+				pickLocationButton.disabled = true;
+				locationStatus.textContent = 'Map unavailable.';
 				return;
 			}
 			if (!map) {
@@ -282,8 +290,37 @@
 					attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 				}).addTo(map);
 				L.marker([47.0105, 28.8638]).addTo(map).bindPopup('Chișinău');
+				map.on('click', (event) => {
+					if (!isPickingLocation) return;
+					isPickingLocation = false;
+					mapElement.classList.remove('picking-location');
+					pickLocationButton.textContent = 'Pick on map';
+					const coordinates = [event.latlng.lat, event.latlng.lng];
+					showMapLocation(coordinates, 5, 'Chosen location');
+					map.setView(coordinates, 18);
+					locationStatus.textContent = 'Location set.';
+				});
 			}
 			setTimeout(() => map.invalidateSize(true), 100);
+		}
+
+		function showMapLocation(coordinates, accuracy, label) {
+			if (userMarker) userMarker.remove();
+			if (accuracyCircle) accuracyCircle.remove();
+			accuracyCircle = L.circle(coordinates, {
+				radius: accuracy,
+				color: '#2563eb',
+				fillColor: '#93c5fd',
+				fillOpacity: 0.15,
+				weight: 1
+			}).addTo(map);
+			userMarker = L.marker(coordinates).addTo(map).bindPopup(label).openPopup();
+			map.fitBounds(accuracyCircle.getBounds(), { maxZoom: 18, padding: [24, 24] });
+			map.invalidateSize();
+		}
+
+		function formatAccuracy(metres) {
+			return metres >= 1000 ? `${(metres / 1000).toFixed(1)} km` : `${Math.round(metres)} m`;
 		}
 
 		window.addEventListener('resize', () => {
@@ -584,11 +621,20 @@
 			locationStopTimer = null;
 		}
 
-		document.getElementById('locateButton').addEventListener('click', () => {
-			const button = document.getElementById('locateButton');
-			const status = document.getElementById('locationStatus');
+		pickLocationButton.addEventListener('click', () => {
+			initializeMap();
+			if (!map) return;
+			stopLocationWatch();
+			locateButton.disabled = false;
+			isPickingLocation = !isPickingLocation;
+			mapElement.classList.toggle('picking-location', isPickingLocation);
+			pickLocationButton.textContent = isPickingLocation ? 'Cancel' : 'Pick on map';
+			locationStatus.textContent = isPickingLocation ? 'Click the map where you are.' : '';
+		});
+
+		locateButton.addEventListener('click', () => {
 			if (!navigator.geolocation) {
-				status.textContent = 'This browser cannot use your location.';
+				locationStatus.textContent = 'This browser cannot use your location.';
 				return;
 			}
 			if (!map || !window.L) {
@@ -597,54 +643,49 @@
 			}
 
 			stopLocationWatch();
+			isPickingLocation = false;
+			mapElement.classList.remove('picking-location');
+			pickLocationButton.textContent = 'Pick on map';
 			let bestAccuracy = Infinity;
 			let hasLocation = false;
-			button.disabled = true;
-			status.textContent = 'Finding your location…';
+			locateButton.disabled = true;
+			locationStatus.textContent = 'Finding your location…';
 			locationWatchId = navigator.geolocation.watchPosition(
 				(position) => {
 					if (position.coords.accuracy >= bestAccuracy) return;
 					hasLocation = true;
 					bestAccuracy = position.coords.accuracy;
 					const coordinates = [position.coords.latitude, position.coords.longitude];
-					const accuracy = Math.round(position.coords.accuracy);
-					if (userMarker) userMarker.remove();
-					if (accuracyCircle) accuracyCircle.remove();
-					accuracyCircle = L.circle(coordinates, {
-						radius: accuracy,
-						color: '#2563eb',
-						fillColor: '#93c5fd',
-						fillOpacity: 0.15,
-						weight: 1
-					}).addTo(map);
-					userMarker = L.marker(coordinates).addTo(map).bindPopup('Your location').openPopup();
-					map.fitBounds(accuracyCircle.getBounds(), { maxZoom: 18, padding: [24, 24] });
-					status.textContent = accuracy >= 1000
-						? `Location found (about ${(accuracy / 1000).toFixed(1)} km accuracy).`
-						: `Location found (about ${accuracy} m accuracy).`;
-					map.invalidateSize();
-					if (accuracy <= 50) {
+					showMapLocation(coordinates, bestAccuracy, 'Your location');
+					locationStatus.textContent = bestAccuracy <= 25
+						? `Location found (about ${formatAccuracy(bestAccuracy)} accuracy).`
+						: `Improving accuracy… about ${formatAccuracy(bestAccuracy)} so far.`;
+					if (bestAccuracy <= 25) {
 						stopLocationWatch();
-						button.disabled = false;
+						locateButton.disabled = false;
 					}
 				},
 				(error) => {
 					if (!hasLocation) {
-						status.textContent = error.code === error.PERMISSION_DENIED
+						locationStatus.textContent = error.code === error.PERMISSION_DENIED
 							? 'Location access was blocked.'
 							: 'Could not find your location.';
+					} else {
+						locationStatus.textContent = `Best available accuracy: ${formatAccuracy(bestAccuracy)}. Pick on map for an exact spot.`;
 					}
 					stopLocationWatch();
-					button.disabled = false;
+					locateButton.disabled = false;
 				},
-				{ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
+				{ enableHighAccuracy: true, timeout: 60000, maximumAge: 0 }
 			);
 
 			locationStopTimer = setTimeout(() => {
 				stopLocationWatch();
-				button.disabled = false;
-				if (!hasLocation) status.textContent = 'Could not find your location.';
-			}, 30000);
+				locateButton.disabled = false;
+				locationStatus.textContent = hasLocation
+					? `Best available accuracy: ${formatAccuracy(bestAccuracy)}. Pick on map for an exact spot.`
+					: 'Could not find your location.';
+			}, 60000);
 		});
 
 		window.addEventListener('pagehide', () => {
