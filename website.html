@@ -74,6 +74,9 @@
 		.status.error { color: #b42318; }
 		.status.success { color: #08783e; }
 		.status a { color: #175cd3; }
+		.saved-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 10px; margin-top: 14px; }
+		.saved-photo { display: block; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #f2f4f7; }
+		.saved-photo img { width: 100%; height: 100%; display: block; object-fit: cover; }
 		.events { display: grid; gap: 9px; padding: 0; margin: 14px 0 0; list-style: none; }
 		.event { padding: 11px 12px; border: 1px solid #e1e7ef; border-radius: 10px; background: #fbfcfe; }
 		.event strong { display: block; margin-bottom: 3px; }
@@ -129,6 +132,7 @@
 				</div>
 				<progress id="uploadProgress" class="progress hidden" max="100" value="0"></progress>
 				<div id="uploadStatus" class="status" role="status" aria-live="polite"></div>
+				<div id="savedPhotos" class="saved-photos" aria-label="Saved photos"></div>
 			</section>
 
 			<section class="card" aria-labelledby="calendarTitle">
@@ -195,7 +199,8 @@
 			getStorage,
 			ref,
 			uploadBytesResumable,
-			getDownloadURL
+			getDownloadURL,
+			listAll
 		} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 		const firebaseConfig = {
@@ -223,6 +228,8 @@
 		let map = null;
 		let userMarker = null;
 		let accuracyCircle = null;
+		let locationWatchId = null;
+		let locationStopTimer = null;
 
 		const mediaInput = document.getElementById('mediaInput');
 		const mediaPreview = document.getElementById('mediaPreview');
@@ -230,6 +237,7 @@
 		const clearMediaButton = document.getElementById('clearMediaButton');
 		const uploadProgress = document.getElementById('uploadProgress');
 		const uploadStatus = document.getElementById('uploadStatus');
+		const savedPhotos = document.getElementById('savedPhotos');
 		const calendarButton = document.getElementById('calendarButton');
 		const refreshCalendarButton = document.getElementById('refreshCalendarButton');
 		const forgetCalendarButton = document.getElementById('forgetCalendarButton');
@@ -322,6 +330,34 @@
 
 		clearMediaButton.addEventListener('click', clearSelectedMedia);
 
+		async function loadSavedPhotos() {
+			if (!currentUser) return;
+			savedPhotos.replaceChildren();
+
+			try {
+				const result = await listAll(ref(storage, `uploads/${currentUser.uid}`));
+				const urls = await Promise.all(result.items.map((item) => getDownloadURL(item)));
+				for (const [index, url] of urls.entries()) {
+					const link = document.createElement('a');
+					link.className = 'saved-photo';
+					link.href = url;
+					link.target = '_blank';
+					link.rel = 'noopener noreferrer';
+					const image = document.createElement('img');
+					image.src = url;
+					image.alt = `Saved photo ${index + 1}`;
+					image.loading = 'lazy';
+					link.append(image);
+					savedPhotos.append(link);
+				}
+			} catch (error) {
+				uploadStatus.textContent = error.code === 'storage/unauthorized'
+					? 'Photos are not set up yet.'
+					: `Could not load photos: ${error.message}`;
+				uploadStatus.className = 'status error';
+			}
+		}
+
 		uploadButton.addEventListener('click', () => {
 			if (!currentUser || !selectedFile) return;
 			const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -344,16 +380,11 @@
 					uploadStatus.className = 'status error';
 				},
 				async () => {
-					const downloadUrl = await getDownloadURL(task.snapshot.ref);
-					uploadStatus.replaceChildren();
-					const link = document.createElement('a');
-					link.href = downloadUrl;
-					link.target = '_blank';
-					link.rel = 'noopener noreferrer';
-					link.textContent = 'Uploaded — open image';
-					uploadStatus.append(link);
+					await getDownloadURL(task.snapshot.ref);
+					uploadStatus.textContent = 'Uploaded.';
 					uploadStatus.className = 'status success';
 					clearMediaButton.disabled = false;
+					await loadSavedPhotos();
 				}
 			);
 		});
@@ -446,19 +477,33 @@
 			forgetCalendarButton.classList.add('hidden');
 		});
 
+		function stopLocationWatch() {
+			if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
+			if (locationStopTimer !== null) clearTimeout(locationStopTimer);
+			locationWatchId = null;
+			locationStopTimer = null;
+		}
+
 		document.getElementById('locateButton').addEventListener('click', () => {
+			const button = document.getElementById('locateButton');
 			const status = document.getElementById('locationStatus');
 			if (!navigator.geolocation) {
 				status.textContent = 'This browser cannot use your location.';
 				return;
 			}
-			status.textContent = 'Getting your location…';
-			navigator.geolocation.getCurrentPosition(
+
+			stopLocationWatch();
+			let bestAccuracy = Infinity;
+			let hasLocation = false;
+			button.disabled = true;
+			status.textContent = 'Finding your location…';
+			locationWatchId = navigator.geolocation.watchPosition(
 				(position) => {
+					if (position.coords.accuracy >= bestAccuracy) return;
+					hasLocation = true;
+					bestAccuracy = position.coords.accuracy;
 					const coordinates = [position.coords.latitude, position.coords.longitude];
 					const accuracy = Math.round(position.coords.accuracy);
-					const zoom = accuracy > 20000 ? 9 : accuracy > 5000 ? 11 : accuracy > 1000 ? 13 : 15;
-					map.setView(coordinates, zoom);
 					if (userMarker) userMarker.remove();
 					if (accuracyCircle) accuracyCircle.remove();
 					accuracyCircle = L.circle(coordinates, {
@@ -469,18 +514,33 @@
 						weight: 1
 					}).addTo(map);
 					userMarker = L.marker(coordinates).addTo(map).bindPopup('Your location').openPopup();
+					map.fitBounds(accuracyCircle.getBounds(), { maxZoom: 18, padding: [24, 24] });
 					status.textContent = accuracy >= 1000
 						? `Location found (about ${(accuracy / 1000).toFixed(1)} km accuracy).`
 						: `Location found (about ${accuracy} m accuracy).`;
 					map.invalidateSize();
+					if (accuracy <= 50) {
+						stopLocationWatch();
+						button.disabled = false;
+					}
 				},
 				(error) => {
-					status.textContent = error.code === error.PERMISSION_DENIED
-						? 'Location access was blocked.'
-						: 'Could not find your location.';
+					if (!hasLocation) {
+						status.textContent = error.code === error.PERMISSION_DENIED
+							? 'Location access was blocked.'
+							: 'Could not find your location.';
+					}
+					stopLocationWatch();
+					button.disabled = false;
 				},
-				{ enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+				{ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
 			);
+
+			locationStopTimer = setTimeout(() => {
+				stopLocationWatch();
+				button.disabled = false;
+				if (!hasLocation) status.textContent = 'Could not find your location.';
+			}, 30000);
 		});
 
 		document.getElementById('fingerprintButton').addEventListener('click', async () => {
@@ -531,6 +591,7 @@
 			}
 			ensureBrowserSessionCookie();
 			requestAnimationFrame(initializeMap);
+			if (!isPreview) loadSavedPhotos();
 		}
 
 		onAuthStateChanged(auth, (user) => {
