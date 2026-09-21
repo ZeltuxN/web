@@ -71,6 +71,8 @@
 		.password-toggle:hover { background: #f3f4f6; filter: none; }
 		.password-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 		.password-toggle svg { display: block; width: 20px; height: 20px; margin: auto; }
+		.password-toggle { z-index: 2; display: flex; align-items: center; justify-content: center; }
+		input::-ms-reveal, input::-ms-clear { display: none; }
 		.remember { display: flex; align-items: center; gap: 7px; font-weight: 400; }
 		.remember input { width: auto; margin: 0; }
 		button {
@@ -157,6 +159,20 @@
 		</section>
 	</main>
 
+	<script>
+		document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+			button.addEventListener('click', () => {
+				const input = document.getElementById(button.dataset.passwordToggle);
+				if (!input) return;
+				const willShow = input.type === 'password';
+				input.type = willShow ? 'text' : 'password';
+				button.setAttribute('aria-pressed', String(willShow));
+				button.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
+				input.focus({ preventScroll: true });
+			});
+		});
+	</script>
+
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 		import {
@@ -186,18 +202,6 @@
 		const auth = getAuth(app);
 		const persistenceReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 		let authActionInProgress = false;
-
-		document.querySelectorAll('[data-password-toggle]').forEach((button) => {
-			button.addEventListener('click', () => {
-				const input = document.getElementById(button.dataset.passwordToggle);
-				if (!input) return;
-				const willShow = input.type === 'password';
-				input.type = willShow ? 'text' : 'password';
-				button.setAttribute('aria-pressed', String(willShow));
-				button.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
-				input.focus({ preventScroll: true });
-			});
-		});
 
 		function setCookie(name, value, days) {
 			const maxAge = Math.max(0, Math.round(days * 86400));
