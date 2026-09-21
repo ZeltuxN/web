@@ -54,6 +54,23 @@
 			border: 1px solid #ccc;
 			border-radius: 4px;
 		}
+		.password-field { position: relative; margin-bottom: 14px; }
+		.password-field input { margin: 0; padding-right: 44px; }
+		.password-toggle {
+			position: absolute;
+			top: 1px;
+			right: 1px;
+			width: 40px;
+			height: calc(100% - 2px);
+			margin: 0;
+			padding: 0;
+			background: transparent;
+			color: #4b5563;
+			border-radius: 3px;
+		}
+		.password-toggle:hover { background: #f3f4f6; filter: none; }
+		.password-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+		.password-toggle svg { display: block; width: 20px; height: 20px; margin: auto; }
 		.remember { display: flex; align-items: center; gap: 7px; font-weight: 400; }
 		.remember input { width: auto; margin: 0; }
 		button {
@@ -89,7 +106,15 @@
 			<label for="loginEmail">Email</label>
 			<input type="email" id="loginEmail" autocomplete="email">
 			<label for="loginPassword">Password</label>
-			<input type="password" id="loginPassword" autocomplete="current-password">
+			<div class="password-field">
+				<input type="password" id="loginPassword" autocomplete="current-password">
+				<button class="password-toggle" type="button" data-password-toggle="loginPassword" aria-label="Show password" aria-pressed="false">
+					<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/>
+						<circle cx="12" cy="12" r="3"/>
+					</svg>
+				</button>
+			</div>
 			<label class="remember">
 				<input type="checkbox" id="rememberMe"> Remember email
 			</label>
@@ -107,9 +132,25 @@
 			<label for="regEmail">Email</label>
 			<input type="email" id="regEmail" autocomplete="email" required>
 			<label for="regPassword">Password (8+ chars, 1 uppercase, 1 number)</label>
-			<input type="password" id="regPassword" autocomplete="new-password">
+			<div class="password-field">
+				<input type="password" id="regPassword" autocomplete="new-password">
+				<button class="password-toggle" type="button" data-password-toggle="regPassword" aria-label="Show password" aria-pressed="false">
+					<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/>
+						<circle cx="12" cy="12" r="3"/>
+					</svg>
+				</button>
+			</div>
 			<label for="regConfirm">Confirm password</label>
-			<input type="password" id="regConfirm" autocomplete="new-password">
+			<div class="password-field">
+				<input type="password" id="regConfirm" autocomplete="new-password">
+				<button class="password-toggle" type="button" data-password-toggle="regConfirm" aria-label="Show password" aria-pressed="false">
+					<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/>
+						<circle cx="12" cy="12" r="3"/>
+					</svg>
+				</button>
+			</div>
 			<div id="regError" class="message error" role="status" aria-live="polite"></div>
 			<button type="button" data-auth-button onclick="register()">Register</button>
 			<p><a href="#" onclick="showLogin(); return false;">Already have an account? Sign in</a></p>
@@ -145,6 +186,18 @@
 		const auth = getAuth(app);
 		const persistenceReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 		let authActionInProgress = false;
+
+		document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+			button.addEventListener('click', () => {
+				const input = document.getElementById(button.dataset.passwordToggle);
+				if (!input) return;
+				const willShow = input.type === 'password';
+				input.type = willShow ? 'text' : 'password';
+				button.setAttribute('aria-pressed', String(willShow));
+				button.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
+				input.focus({ preventScroll: true });
+			});
+		});
 
 		function setCookie(name, value, days) {
 			const maxAge = Math.max(0, Math.round(days * 86400));
