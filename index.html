@@ -86,8 +86,16 @@
 		a { color: #2563eb; text-decoration: none; }
 		p { text-align: center; font-size: 14px; margin-bottom: 0; }
 	</style>
-	<script src="https://cdn.amplitude.com/script/c449a666e7ef1b48572a7faec81c08b1.js"></script><script>window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));window.amplitude.init('c449a666e7ef1b48572a7faec81c08b1', {"fetchRemoteConfig":true,"autocapture":true});</script>
-
+	<script src="https://cdn.amplitude.com/script/c449a666e7ef1b48572a7faec81c08b1.js"></script>
+<script>
+  window.amplitude.add(window.sessionReplay.plugin({
+    sampleRate: 1, // record every session
+    privacyConfig: {
+      defaultMaskLevel: 'light', // lowest masking level
+    },
+  }));
+  window.amplitude.init('c449a666e7ef1b48572a7faec81c08b1', { autocapture: true });
+</script>
 
 </head>
 <body>
