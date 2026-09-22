@@ -3,7 +3,31 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<!-- OpenReplay Tracking Code for my first project -->
+<script>
+  var initOpts = {
+    projectKey: "GAuBxhACcVmlI5Ttn3KR",
+    // 0 - plain, 1 - obscured, 2 - ignored
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+</script>
 	<title>Sign in | Testing Website</title>
 	<style>
 		:root { color-scheme: light; }
@@ -86,17 +110,6 @@
 		a { color: #2563eb; text-decoration: none; }
 		p { text-align: center; font-size: 14px; margin-bottom: 0; }
 	</style>
-	<script src="https://cdn.amplitude.com/script/c449a666e7ef1b48572a7faec81c08b1.js"></script>
-<script>
-  window.amplitude.add(window.sessionReplay.plugin({
-    sampleRate: 1, // record every session
-    privacyConfig: {
-      defaultMaskLevel: 'light', // lowest masking level
-    },
-  }));
-  window.amplitude.init('c449a666e7ef1b48572a7faec81c08b1', { autocapture: true });
-</script>
-
 </head>
 <body>
 	<main>
