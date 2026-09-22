@@ -4,29 +4,21 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
+<script src="https://cdnjs.middleware.io/browser/libs/0.0.2/middleware-rum.min.js" type="text/javascript" crossorigin="anonymous"></script>
+
 <script>
-  (function(h,o,u,n,d) {
-    h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
-    d=o.createElement(u);d.async=1;d.src=n;d.crossOrigin=''
-    n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
-  })(window,document,'script','https://www.datadoghq-browser-agent.com/eu1/v7/datadog-rum.js','DD_RUM')
-  window.DD_RUM.onReady(function() {
-    window.DD_RUM.init({
-        applicationId: 'f70c5465-0c68-4d09-9460-aec71253bd6e',
-        clientToken: 'pub74c61dbedeed9a819eb696592972bca2',
-        site: 'datadoghq.eu',
-        service: '<SERVICE_NAME>',
-        env: '<ENV_NAME>',				// e.g. 'prod', 'staging-1', 'dev'
-        version: '<VERSION_NUMBER>',	// e.g. '1.0.0'
-        betaEnableViewUpdates: true,	// Send incremental view updates instead of a full payload each time (beta)
-        sessionSampleRate: 100,			// capture 100% of sessions
-        sessionReplaySampleRate: 100,
-        defaultPrivacyLevel: 'allow',		// capture 20% of sessions with replay
-        trackResources: true,			// Enable Resource tracking
-        trackUserInteractions: true,	// Enable Action tracking
-        trackLongTasks: true,			// Enable Long Tasks tracking
-    });
-  })
+  if (window.Middleware){
+    Middleware.track({
+      serviceName:"test",
+      projectName:"test",
+      accountKey:"etjgcdmlagnmevticjeqrwmjmlaighqanbdk",
+      target: "https://qdnws.middleware.io",
+      tracePropagationTargets: [/.*/],
+      defaultAttributes: {
+        "app.version": "1.0.0",
+      },
+    })
+  }
 </script>
 	<title>Dashboard</title>
 		<link
