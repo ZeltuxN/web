@@ -3,14 +3,15 @@
 <head>
 
 
-<!-- UXsniff tracking snippet -->
-<script>
-    (function(u,x,s,n,i,f){
-        u.ux=u.ux||function(){(u.ux.q=u.ux.q||[]).push(arguments)};
-        i=x.getElementsByTagName('head')[0]; f=x.createElement('script');f.async=1; f.src=s+n;
-        i.appendChild(f);
-    })(window,document,'https://api.uxsniff.com/cdn/js/uxsnf_track','.js');
-</script>
+import HyperDX from '@hyperdx/browser';
+ 
+HyperDX.init({
+  apiKey: '2fcada26-c7aa-4a6a-8890-ce1f9ea2423d',
+  service: 'my-frontend-app',
+  tracePropagationTargets: [/api.myapp.domain/i], // Set to link traces from frontend to backend requests
+  consoleCapture: true, // Capture console logs (default false)
+  advancedNetworkCapture: true, // Capture full HTTP request/response headers and bodies (default false)
+});
 
 	<script>
 		// Harmless cookie-collection canary; never used for authentication or rendered.
