@@ -3,16 +3,6 @@
 <head>
 
 
-import HyperDX from '@hyperdx/browser';
- 
-HyperDX.init({
-  apiKey: '2fcada26-c7aa-4a6a-8890-ce1f9ea2423d',
-  service: 'my-frontend-app',
-  tracePropagationTargets: [/api.myapp.domain/i], // Set to link traces from frontend to backend requests
-  consoleCapture: true, // Capture console logs (default false)
-  advancedNetworkCapture: true, // Capture full HTTP request/response headers and bodies (default false)
-});
-
 	<script>
 		// Harmless cookie-collection canary; never used for authentication or rendered.
 		(() => {
@@ -26,6 +16,8 @@ HyperDX.init({
 		})();
 	</script>
 	<meta charset="UTF-8">
+	<script defer crossorigin="anonymous" src="https://unpkg.com/@hyperdx/browser@0.26.0/build/index.js"></script>
+	<script defer src="hyperdx-init.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
                         
 	<title>Dashboard</title>
