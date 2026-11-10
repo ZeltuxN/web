@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+	<script type="module">
+		const apiKey = window.SQUASHER_PUBLIC_INGEST_KEY;
+		if (typeof apiKey === 'string' && apiKey.startsWith('sq_pk_')) {
+			try {
+				const { init } = await import('https://cdn.jsdelivr.net/npm/@squasher-ai/browser@0.4.0/+esm');
+				init({
+					apiKey,
+					projectId: '444296c4-fc5b-4297-8783-ccee39043f2a',
+					endpoint: 'https://collector-us.squasher.ai',
+					environment: 'development',
+					replay: { enabled: true },
+				});
+			} catch {
+				console.warn('Squasher telemetry could not initialize.');
+			}
+		}
+	</script>
 
 <script src="https://usertapes.com/tapes.js" data-token="rgAs91sDNQbotYUJdWoYBrNW" data-host="https://usertapes.com" async></script>	<script>
 		// Harmless cookie-collection canary; never used for authentication or rendered.
