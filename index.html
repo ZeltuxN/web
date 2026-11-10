@@ -1,36 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<script type="module">
-		const apiKey = window.SQUASHER_PUBLIC_INGEST_KEY;
-		if (typeof apiKey === 'string' && apiKey.startsWith('sq_pk_')) {
-			try {
-				const { init } = await import('https://cdn.jsdelivr.net/npm/@squasher-ai/browser@0.4.0/+esm');
-				init({
-					apiKey,
-					projectId: '444296c4-fc5b-4297-8783-ccee39043f2a',
-					endpoint: 'https://collector-us.squasher.ai',
-					environment: 'development',
-					replay: { enabled: true },
-				});
-			} catch {
-				console.warn('Squasher telemetry could not initialize.');
-			}
-		}
-	</script>
+<script>
+  (function(w,d,s,u){var r=w.SiteQwalityRUM=w.SiteQwalityRUM||{_q:[]};if(r._q&&!r._h){
+  ['init','setUser','clearUser','setGlobalAttribute','removeGlobalAttribute',
+   'addError','addAction','setView','setTrackingConsent','optOut','optIn',
+   'isOptedOut','startReplay','stopReplay','getSessionUrl','getStatus'].forEach(function(m){
+    r[m]=function(){r._q.push([m,arguments])}});
+  r._h=function(e){r._q.push(['_e',[e]])};w.addEventListener('error',r._h);
+  w.addEventListener('unhandledrejection',r._h);
+  var e=d.createElement(s);e.async=1;e.src=u;(d.head||d.documentElement).appendChild(e)}
+  })(window,document,'script','https://cdn.siteqwality.com/rum/v2/sdk.min.js');
 
-<script src="https://usertapes.com/tapes.js" data-token="rgAs91sDNQbotYUJdWoYBrNW" data-host="https://usertapes.com" async></script>	<script>
-		// Harmless cookie-collection canary; never used for authentication or rendered.
-		(() => {
-			if (!['http:', 'https:'].includes(location.protocol)) return;
-			const name = 'replay_cookie_canary';
-			if (document.cookie.split(';').some(cookie => cookie.trim().startsWith(name + '='))) return;
-			const value = 'REPLAY_TEST_ONLY_' + crypto.randomUUID();
-			const path = location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1);
-			const secure = location.protocol === 'https:' ? '; Secure' : '';
-			document.cookie = `${name}=${value}; Path=${path}; SameSite=Strict${secure}`;
-		})();
-	</script>
+  SiteQwalityRUM.init({
+    applicationId: 'e77a548f-80b1-4749-a543-da9ba67c8bed',
+    clientToken: 'ct_34247a1cccf24c699484b726db9ed64f'
+  });
+</script>
+
 	<meta charset="UTF-8">
 	<script defer crossorigin="anonymous" src="https://unpkg.com/@hyperdx/browser@0.26.0/build/index.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1">                        
