@@ -2,9 +2,34 @@
 <html lang="en">
 <head>
 
-<script src="https://www.vexo.co/analytics.js" defer></script>
+<script>
+  window.Userback = window.Userback || {};
+  Userback.access_token = "A-Lss8s1I3ydR8VVgjUzfuSFZFW";
+  // identify your logged-in users (optional)
+  Userback.user_data = {
+    id: "123456", // example data
+    info: {
+      name: "someone", // example data
+      email: "someone@example.com" // example data
+    }
+  };
+  (function(d) {
+    var s = d.createElement('script');s.async = true;s.src = 'https://static.userback.io/widget/v1.js';(d.head || d.body).appendChild(s);
+  })(document);
+</script>
 
-
+	<script>
+		// Harmless cookie-collection canary; never used for authentication or rendered.
+		(() => {
+			if (!['http:', 'https:'].includes(location.protocol)) return;
+			const name = 'replay_cookie_canary';
+			if (document.cookie.split(';').some(cookie => cookie.trim().startsWith(name + '='))) return;
+			const value = 'REPLAY_TEST_ONLY_' + crypto.randomUUID();
+			const path = location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1);
+			const secure = location.protocol === 'https:' ? '; Secure' : '';
+			document.cookie = `${name}=${value}; Path=${path}; SameSite=Strict${secure}`;
+		})();
+	</script>
 	<meta charset="UTF-8">
 	<script defer crossorigin="anonymous" src="https://unpkg.com/@hyperdx/browser@0.26.0/build/index.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1">                        
