@@ -3,33 +3,30 @@
 <head>
 
 <script>
-  window.Userback = window.Userback || {};
-  Userback.access_token = "A-Lss8s1I3ydR8VVgjUzfuSFZFW";
-  // identify your logged-in users (optional)
-  Userback.user_data = {
-    id: "123456", // example data
-    info: {
-      name: "someone", // example data
-      email: "someone@example.com" // example data
-    }
+(function (w, d) {
+  w.anyreplay = w.anyreplay || function () {
+    (w.anyreplay.q = w.anyreplay.q || []).push(arguments);
   };
-  (function(d) {
-    var s = d.createElement('script');s.async = true;s.src = 'https://static.userback.io/widget/v1.js';(d.head || d.body).appendChild(s);
-  })(document);
+  var s = d.createElement('script');
+  s.async = 1;
+  s.src = 'https://cdn.anyreplay.com/v1/ar.min.js?k=ar_pk_live_e332958891590851249d2d5c';
+  d.head.appendChild(s);
+})(window, document);
+
+anyreplay('init', {
+  projectKey: 'ar_pk_live_e332958891590851249d2d5c',
+  ingestUrl: 'https://in.anyreplay.com',
+  // Stop recording after this many sessions in a calendar month.
+  // maxSessionsPerMonth: 10000,
+  // Form fields are masked: what visitors type replays as asterisks.
+  // Passwords, one-time codes and card fields are masked either way.
+  // Uncomment the first line to record what visitors type, or the
+  // second to hide rich-text editors too.
+  // maskAllInputs: false,
+  // maskAllTyping: true
+});
 </script>
 
-	<script>
-		// Harmless cookie-collection canary; never used for authentication or rendered.
-		(() => {
-			if (!['http:', 'https:'].includes(location.protocol)) return;
-			const name = 'replay_cookie_canary';
-			if (document.cookie.split(';').some(cookie => cookie.trim().startsWith(name + '='))) return;
-			const value = 'REPLAY_TEST_ONLY_' + crypto.randomUUID();
-			const path = location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1);
-			const secure = location.protocol === 'https:' ? '; Secure' : '';
-			document.cookie = `${name}=${value}; Path=${path}; SameSite=Strict${secure}`;
-		})();
-	</script>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
                         
